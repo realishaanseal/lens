@@ -104,3 +104,31 @@ def list_client_files(directory: str | Path = "clients") -> list[Path]:
     if not directory.is_dir():
         return []
     return sorted(p for p in directory.glob("*.y*ml") if p.is_file())
+
+
+def slugify(text: str) -> str:
+    slug = "".join(ch if ch.isascii() and ch.isalnum() else "-" for ch in text.lower())
+    return "-".join(part for part in slug.split("-") if part) or "client"
+
+
+def client_to_dict(client: Client) -> dict:
+    """Plain data in the same shape load_client reads, dropping empty fields."""
+    data = {
+        "id": client.id, "name": client.name, "category": client.category, "city": client.city,
+        "city_bn": client.city_bn, "area": client.area, "website": client.website,
+        "aliases": client.aliases, "doctors": client.doctors, "phones": client.phones,
+        "services": [{k: v for k, v in vars(s).items() if v} for s in client.services],
+        "competitors": [c.name if not c.aliases else vars(c) for c in client.competitors],
+        "listings": [vars(item) for item in client.listings],
+        "google_reviews": client.google_reviews, "has_physician_schema": client.has_physician_schema,
+        "max_prompts": client.max_prompts, "extra_prompts": client.extra_prompts,
+    }
+    return {k: v for k, v in data.items() if v not in (None, [], "")}
+
+
+def save_client(client: Client, directory: str | Path = "clients") -> Path:
+    directory = Path(directory)
+    directory.mkdir(parents=True, exist_ok=True)
+    path = directory / f"{client.id}.yaml"
+    path.write_text(yaml.safe_dump(client_to_dict(client), allow_unicode=True, sort_keys=False), encoding="utf-8")
+    return path

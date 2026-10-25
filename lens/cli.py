@@ -12,6 +12,7 @@ from .prompts import build_prompts
 from .providers import PROVIDERS, MockProvider, ProviderError, available_providers, get_provider
 from .report import build_report
 from .runner import run_check, seed_demo
+from .settings import load_env
 from .store import Store, current_period
 from .suggest import suggest
 from .traffic import import_csv
@@ -86,6 +87,7 @@ def _print_summary(client, store, period):
 
 
 def main(argv: list[str] | None = None):
+    load_env()
     parser = argparse.ArgumentParser(prog="lens", description="Varaxis Lens - know if AI recommends you.")
     parser.add_argument("--db", help="SQLite file (default: $LENS_DB or data/lens.db)")
     sub = parser.add_subparsers(dest="command", required=True)

@@ -78,3 +78,24 @@ def test_traffic_import(client, store, tmp_path):
     bad.write_text("period,source,metric,value\nOct,ga4,x,1\n")
     with pytest.raises(ValueError):
         import_csv(store, client.id, bad)
+
+
+def test_client_save_round_trip(client, tmp_path):
+    from lens.config import load_client, save_client
+    client.competitors[1].aliases = ["City Care"]
+    loaded = load_client(save_client(client, tmp_path))
+    assert loaded == client
+
+
+def test_env_save_and_load(tmp_path, monkeypatch):
+    from lens.settings import load_env, read_env, save_env
+    env = tmp_path / ".env"
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    save_env({"OPENAI_API_KEY": "sk-1", "LENS_OPENAI_MODEL": ""}, env)
+    assert read_env(env) == {"OPENAI_API_KEY": "sk-1"}
+    monkeypatch.delenv("OPENAI_API_KEY")
+    load_env(env)
+    import os
+    assert os.environ["OPENAI_API_KEY"] == "sk-1"
+    save_env({"OPENAI_API_KEY": ""}, env)
+    assert read_env(env) == {} and "OPENAI_API_KEY" not in os.environ

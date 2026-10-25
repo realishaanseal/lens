@@ -13,18 +13,27 @@ Prompt library → Scheduler → LLM APIs → Parser → Reports
 
 ## Quick start
 
+**Windows:** double-click `start.bat`.  **Mac / Linux:** run `./start.sh`.
+
+The first run installs everything (needs Python 3.10+); after that it opens Lens in your browser.
+
+1. **Settings**: paste your OpenAI, Gemini and/or Perplexity API keys. They are saved to a local `.env` file.
+2. **Clients**: add a business: name, city, other spellings, doctors, services, competitors.
+3. **Dashboard**: press **Run check**. Lens asks every question on each AI tool and shows the mention rate, who AI recommends instead, what to fix, and every answer. Download the monthly PDF from the sidebar.
+
+No keys yet? Switch on **Offline mock answers** in the sidebar, or press **Load demo data**, to see how it works.
+
+Manual setup instead of the launcher:
+
 ```bash
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-
-# Try it offline with five months of mock data
-python -m lens demo --client clients/sshri.yaml
 streamlit run app.py
 ```
 
-## Real checks
+## Command line
 
-Set a key for each AI tool you want to check:
+Everything in the app also works from the terminal (handy for scheduling). Keys come from `.env` or the environment:
 
 ```bash
 export OPENAI_API_KEY=...       # ChatGPT (Responses API with web search)
@@ -63,9 +72,9 @@ period,source,metric,value
 python -m lens import-traffic --client clients/sshri.yaml traffic.csv
 ```
 
-## Adding a client
+## Client settings
 
-Copy `clients/sshri.yaml` and fill in:
+Clients are added on the **Clients** page and saved as YAML in `clients/` (see `clients/sshri.yaml`). The fields:
 
 - **name, aliases, doctors, phones**: every way AI might refer to the business. Any of them counts as a mention.
 - **services**: each one becomes several questions. Add a Bengali name (`bn`) to get Bengali-script questions.
@@ -86,7 +95,8 @@ AI answers vary from run to run and over time. Lens stores every answer with its
 ## Project layout
 
 ```
-app.py                     Streamlit dashboard
+app.py                     Streamlit app (start.sh / start.bat launch it)
+ui/                        app pages: dashboard, clients, settings
 clients/                   one YAML per client
 lens/
   config.py                client config loader
@@ -99,6 +109,7 @@ lens/
   suggest.py               fix suggestions
   report.py                monthly PDF
   traffic.py               GA4 / Search Console CSV import
+  settings.py              API keys in .env
   cli.py                   python -m lens ...
 tests/
 ```
