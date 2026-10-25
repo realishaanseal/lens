@@ -1,0 +1,49 @@
+# Customer-style questions per business category and language.
+#
+# Placeholders: {city} {city_bn} {area} {service} {service_bn}
+# A template that uses {service} or {service_bn} is expanded once per service
+# in the client config; the others are used once.
+# Languages: en (English), bn (Bengali script), banglish (Bengali in Latin script).
+
+hospital:
+  en:
+    - "Who is the best {service} doctor in {city}?"
+    - "Which hospital in {city} is best for {service} treatment?"
+    - "Best multispeciality hospital in {city}, {area}"
+    - "24 hour emergency hospital near {city}"
+  bn:
+    - "{city_bn}-এ সেরা {service_bn} ডাক্তার কে?"
+    - "{city_bn}-এ সবচেয়ে ভালো হাসপাতাল কোনটা?"
+  banglish:
+    - "{city} e best {service} doctor ke?"
+    - "{city} e sabcheye bhalo hospital konta?"
+
+clinic:
+  en:
+    - "Best {service} clinic in {city}"
+    - "Good {service} doctor near {city} with an evening chamber"
+    - "Which clinic in {city} has the best reviews?"
+  bn:
+    - "{city_bn}-এ ভালো {service_bn} ক্লিনিক কোনটা?"
+  banglish:
+    - "{city} e bhalo {service} clinic konta?"
+
+coaching:
+  en:
+    - "Best {service} coaching centre in {city}"
+    - "Which coaching institute in {city} has the best results for {service}?"
+    - "Top tuition classes near {city}, {area}"
+  bn:
+    - "{city_bn}-এ সেরা {service_bn} কোচিং সেন্টার কোনটা?"
+  banglish:
+    - "{city} e best {service} coaching konta?"
+
+restaurant:
+  en:
+    - "Best place to eat {service} in {city}"
+    - "Best restaurants in {city} for a family dinner"
+    - "Where can I get good {service} near {city}?"
+  bn:
+    - "{city_bn}-এ সবচেয়ে ভালো রেস্তোরাঁ কোনটা?"
+  banglish:
+    - "{city} e best {service} kothay pawa jay?"

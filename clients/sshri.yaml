@@ -1,0 +1,52 @@
+# Example client. Copy this file per client and fill in the real details.
+id: sshri
+name: SSHRI Hospital
+category: hospital          # hospital | clinic | coaching | restaurant
+city: Krishnanagar
+city_bn: কৃষ্ণনগর
+area: Nadia
+website: https://example.com   # replace with the hospital's site
+
+# Every other way AI might write the name. Doctor names and phone numbers also
+# count as a mention.
+aliases:
+  - SSHRI Multispeciality Hospital
+  - Sshri Hospital Krishnanagar
+doctors: []                 # e.g. ["Dr. Full Name", ...]
+phones: []                  # e.g. ["+91 98xxxxxxxx"]
+
+# Each service becomes several questions (English, Bengali, Banglish).
+services:
+  - name: Cardiology
+    bn: হৃদরোগ
+    page: /cardiology
+  - name: Nephrology
+    bn: কিডনি
+    page: /nephrology
+  - name: Orthopaedics
+    bn: হাড়ের
+    page: /orthopaedics
+  - name: Gynaecology
+    bn: স্ত্রীরোগ
+    page: /gynaecology
+  - name: Neurology
+    bn: স্নায়ুরোগ
+    page: /neurology
+
+# Known competitors. Others named by AI are picked up automatically.
+competitors:
+  - Hospital B
+  - name: City Care Nursing Home
+    aliases: [City Care]
+  - Nadia Medicare Hospital
+
+# Inputs for fix suggestions
+listings:
+  - {source: Website, phone: "+91 90000 00001"}
+  - {source: Google Business Profile, phone: "+91 90000 00002"}
+google_reviews: 64
+has_physician_schema: false
+
+max_prompts: 25
+extra_prompts:
+  - "Best kidney doctor in Krishnanagar?"
