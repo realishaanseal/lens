@@ -1,6 +1,6 @@
 """Exact construction of the Lens mark, on the Varaxis system.
 
-Lens is a lens: a ring (the rim) around an aperture. Every straight cut uses the Varaxis V angle
+Lens is a search lens: a ring (the rim) around an aperture, with a handle. Every straight cut uses the Varaxis V angle
 (3:2 slope) or its mirror, pieces are separated by one equal gap, and every curve is a true
 circular arc. Nothing is traced. See ../README.md for the rules these numbers encode."""
 import math
@@ -59,7 +59,7 @@ def cut_at(cx, cy, along):
 LENS = dict(R=300, r=150, G=30)
 
 
-def lens_geom(c=LENS):
+def aperture(c=LENS):
     """Aperture: a ring split by one crease at the V angle, around an accent pupil.
 
     - Ring: outer R = 300, inner r = 150 (half the radius).
@@ -74,3 +74,40 @@ def lens_geom(c=LENS):
         (ring_strip(cx, cy, R, r, mid + half, inf), 'base'),
         (disc_strip(cx, cy, r - G, -inf, inf), 'accent'),
     ]
+
+
+# ---------- the handle (search variant) ----------
+def handle(c=LENS, width=None, length=220, corner=50, end='square'):
+    """A handle leaving the ring towards the lower right, along the mirror of the V angle (2:3 run, rise).
+
+    Its inner end is an arc concentric with the ring, G units outside it, so the gap is even.
+    `end` = 'square' (outer corners softened by `corner`) or 'crease' (cut parallel to the crease)."""
+    import numpy as np
+    R, r, G = c['R'], c['r'], c['G']
+    w = width or (R - r)                         # same weight as the ring
+    cx = cy = R; u = np.array([2, 3]) / K; n = np.array([-3, 2]) / K
+    Rg = R + G
+    def inner(side):                             # where a long edge meets the circle of radius Rg
+        o = n * side * w / 2                     # edge line: centre + o + t*u ; solve |o + t u| = Rg
+        t = -o @ u + math.sqrt((o @ u) ** 2 - (o @ o - Rg * Rg))
+        return np.array([cx, cy]) + o + t * u
+    i1, i2 = inner(+1), inner(-1)
+    D = Rg + length
+    o1 = np.array([cx, cy]) + n * w / 2 + u * D; o2 = np.array([cx, cy]) - n * w / 2 + u * D
+    if end == 'crease':                          # cut the end along the V angle: direction (2, -3)
+        v = np.array([2, -3]) / K; mid = np.array([cx, cy]) + u * D
+        def along(p, q):                         # where edge through p (dir u) meets the cut line through mid (dir v)
+            A = np.array([u, -v]).T; t = np.linalg.solve(A, mid - p); return p + u * t[0]
+        o1, o2 = along(i1, None), along(i2, None)
+        radii = [0, corner, corner, 0]
+    else:
+        radii = [0, corner, corner, 0]
+    path = rounded_path([tuple(i1), tuple(o1), tuple(o2), tuple(i2)], radii)
+    # replace the straight closing edge (i2 -> i1) with the concentric arc
+    cross = (i2[0] - cx) * (i1[1] - cy) - (i2[1] - cy) * (i1[0] - cx)
+    return path[:-1] + f"A{f(Rg)} {f(Rg)} 0 0 {1 if cross > 0 else 0} {P(tuple(i1))}Z"
+
+
+def lens_geom(c=LENS):
+    """The approved Lens mark: the aperture with a handle, so it reads as search."""
+    return aperture(c) + [(handle(c), 'base')]

@@ -144,7 +144,7 @@ Run the tests with `pytest`.
 
 ## Brand
 
-The Lens mark is an aperture: a ring split by one crease at the Varaxis V angle, around an amber pupil. It is built on the same system as the Varaxis, Scholar and ClinicOS masters: the same ink, the same Montserrat wordmark and "BY VARAXIS" endorsement, and exactly one accent piece.
+The Lens mark is a search lens: a ring split by one crease at the Varaxis V angle, around an amber pupil, with a handle along the mirror of that angle. It is built on the same system as the Varaxis, Scholar and ClinicOS masters: the same ink, the same Montserrat wordmark and "BY VARAXIS" endorsement, and exactly one accent piece.
 
 | | Light grounds | Dark grounds |
 |---|---|---|

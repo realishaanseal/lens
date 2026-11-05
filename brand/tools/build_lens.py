@@ -72,21 +72,21 @@ def build(form, theme, mono=False, endorse=True):
         egap = 0.5 * C; W = max(ww, ew)
         return svg(W, C + egap + Ce, word((W - ww) / 2, C) + endo((W - ew) / 2, C + egap + Ce), NAME)
     if form == 'stacked':
-        MH = 4.0 * C; gap = 0.6 * C; egap = 0.5 * C
-        W = max(MH, ww, ew if endorse else 0); H = MH + gap + C + ((egap + Ce) if endorse else 0)
-        body = mark_at((W - MH) / 2, 0, MH) + word((W - ww) / 2, MH + gap + C)
+        MH = 4.0 * C; gap = 0.6 * C; egap = 0.5 * C; markw = mw * MH / mh
+        W = max(markw, ww, ew if endorse else 0); H = MH + gap + C + ((egap + Ce) if endorse else 0)
+        body = mark_at((W - markw) / 2, 0, MH) + word((W - ww) / 2, MH + gap + C)
         if endorse: body += endo((W - ew) / 2, MH + gap + C + egap + Ce)
         return svg(W, H, body, NAME)
     if form == 'horizontal':
         if endorse:
             MH = 2.6 * C; g1 = 0.62 * C; dvw = 0.05 * C; block = C + 0.45 * C + Ce
-            xdiv = MH + g1; xt = xdiv + dvw + g1; ty = (MH - block) / 2
+            markw = mw * MH / mh; xdiv = markw + g1; xt = xdiv + dvw + g1; ty = (MH - block) / 2
             body = mark_at(0, 0, MH) + f'<rect fill="{base}" x="{f(xdiv)}" y="0" width="{f(dvw)}" height="{f(MH)}"/>'
             bw = max(ww, ew)   # "LENS" is narrower than "BY VARAXIS": centre both lines in the wider one
             body += word(xt + (bw - ww) / 2, ty + C) + endo(xt + (bw - ew) / 2, ty + C + 0.45 * C + Ce)
             return svg(xt + bw, MH, body, NAME)
-        MH = 2.4 * C; g1 = 0.75 * C
-        return svg(MH + g1 + ww, MH, mark_at(0, 0, MH) + word(MH + g1, (MH - C) / 2 + C), NAME)
+        MH = 2.4 * C; g1 = 0.75 * C; markw = mw * MH / mh
+        return svg(markw + g1 + ww, MH, mark_at(0, 0, MH) + word(markw + g1, (MH - C) / 2 + C), NAME)
 
 
 if __name__ == '__main__':

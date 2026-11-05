@@ -150,15 +150,19 @@ h1, h2, h3, h4 { letter-spacing:-0.015em; font-weight:600 !important; }
 @keyframes lxBootOut { 0%, 25% { opacity:1; visibility:visible; transform:none; filter:none; }
   100% { opacity:0; visibility:hidden; transform:scale(1.04); filter:blur(10px); } }
 .lx-boot-inner { display:flex; flex-direction:column; align-items:center; }
-.lx-lens { position:relative; width:84px; height:84px; animation: lxPop 1s var(--e-out) both; }
+.lx-lens { position:relative; width:84px; height:84px; margin:0 9px 28px 0; animation: lxPop 1s var(--e-out) both; }
 .lx-aperture { position:absolute; inset:0; border-radius:50%; background:#0B1118;
   animation: lxSpin 2.4s var(--e-io) infinite; }
 .lx-aperture::before { content:""; position:absolute; inset:25%; border-radius:50%; background:#FFFFFF; }   /* r = R/2 */
 .lx-aperture::after { content:""; position:absolute; left:-2px; right:-2px; top:50%; height:4.2px; margin-top:-2.1px;
   background:#FFFFFF; transform:rotate(-56.31deg); }                                                          /* the V-angle crease */
+/* handle: 150 units wide, from 330 to 550 units out along the mirrored V angle (ring R = 300 = 42px) */
+.lx-handle { position:absolute; left:50%; top:50%; width:30.8px; height:21px; margin:-10.5px 0 0 -15.4px;
+  background:#0B1118; border-radius:2px 7px 7px 2px;
+  transform:translate(34.2px, 51.2px) rotate(56.31deg); }
 .lx-pupil { position:absolute; inset:30%; border-radius:50%; background:#C9761A; z-index:1;
   animation: lxIris 2.4s var(--e-io) .4s infinite; }
-.lx-word { display:block; margin-top:24px; height:34px; animation: lxFocusIn 1s var(--e-out) .35s both; }
+.lx-word { display:block; margin-top:6px; height:34px; animation: lxFocusIn 1s var(--e-out) .35s both; }
 .lx-bar { position:relative; width:148px; height:2px; margin-top:20px; border-radius:2px; background:#F4F4F5;
   overflow:hidden; animation: lxRise .8s var(--e-out) .6s both; }
 .lx-bar i { position:absolute; inset:0; width:40%; border-radius:2px; background:#0B1118;
@@ -413,7 +417,7 @@ def cta(title: str, body: str) -> None:
 
 _LOADER = """
 <div class="lx-boot" role="status" aria-live="polite" aria-label="Loading"><div class="lx-boot-inner">
-  <div class="lx-lens"><div class="lx-aperture"></div><div class="lx-pupil"></div></div>
+  <div class="lx-lens"><div class="lx-aperture"></div><div class="lx-handle"></div><div class="lx-pupil"></div></div>
   <img class="lx-word" alt="Lens by Varaxis" src="{WORDMARK}">
   <div class="lx-bar"><i></i></div>
   <div class="lx-steps"><span>Loading your clients</span><span>Reading the latest answers</span><span>Preparing your dashboard</span></div>

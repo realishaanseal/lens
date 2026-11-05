@@ -30,14 +30,16 @@ All text is outlined, so no font is needed to display these files.
 
 Amber is the light that passes through the lens. It sits beside Scholar indigo `#3F5AF3` and ClinicOS teal `#1B7786` without competing with either.
 
-## Construction (viewBox 600 × 600)
+## Construction (units of the 600-unit ring)
 
-The mark is an **aperture**: a lens rim around a pupil.
+The mark is a **search lens**: an aperture (a lens rim around a pupil) with a handle.
 
 - **Ring:** outer R = 300, inner r = 150 (half the radius, the same half-radius used in the ClinicOS construction).
 - **Crease:** one straight cut through the centre at the **Varaxis V angle** (3:2 slope, 56.31°), drawn rising to the right. It is a 30-unit gap, so the ring becomes two pieces.
 - **Pupil:** the accent. A disc of radius 120 (r − 30), so it sits 30 units inside the ring on every side: every gap in the mark is the same width.
-- Every curve is a true circular arc; the only straight lines are along the V angle.
+- **Handle:** leaves the ring towards the lower right along the **mirror of the V angle** (2:3 run to rise). It is as wide as the ring is thick (150), and runs 220 units. Its inner end is an arc concentric with the ring, 30 units outside it, so the gap matches every other gap. Its outer corners are softened with r = 50, the radius the V uses.
+- Every curve is a true circular arc; the only straight lines run along the V angle or its mirror.
+- The mark's viewBox is 648.1 × 779.745 (the ring is 600 across; the handle extends it).
 
 ## Wordmark and lockups
 
@@ -50,7 +52,7 @@ Exactly as the Varaxis masters:
 
 - **Clear space:** at least a quarter of the mark's height on every side.
 - **Minimum size:** the symbol alone at 16 px; below a 24 px wordmark cap height drop the endorsement and use `lens-horizontal-compact`.
-- **Do not:** rotate the crease, change the gaps, recolour the ring, add effects, or set the wordmark in live text.
+- **Do not:** rotate the crease or the handle, change the gaps, recolour the ring or handle, add effects, or set the wordmark in live text.
 
 ## Regenerating
 
