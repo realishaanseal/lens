@@ -1,13 +1,23 @@
 """Varaxis Lens.  Run:  streamlit run app.py"""
 
+import os
+
 import streamlit as st
 
 from lens.settings import load_env
+from ui.auth import require_login
 from ui.theme import brand, inject
 
 load_env()
+try:  # Streamlit Cloud: top-level secrets (API keys, models) act like environment variables
+    for _key, _value in st.secrets.items():
+        if isinstance(_value, (str, int, float)):
+            os.environ.setdefault(_key, str(_value))
+except Exception:  # no secrets configured
+    pass
 st.set_page_config(page_title="Varaxis Lens", page_icon="ui/assets/icon.svg", layout="wide", initial_sidebar_state="expanded")
 inject()
+require_login()
 brand()
 
 st.navigation([

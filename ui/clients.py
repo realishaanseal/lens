@@ -38,27 +38,27 @@ c: Client | None = clients.get(choice)
 with st.form(f"client-{choice}", border=True):
     st.subheader("The business")
     a, b = st.columns(2)
-    name = a.text_input("Business name *", c.name if c else "", placeholder="SSHRI Hospital")
+    name = a.text_input("Business name *", c.name if c else "", placeholder="e.g. City Heart Hospital")
     category = b.selectbox("Type *", CATEGORIES, index=CATEGORIES.index(c.category) if c else 0,
                            format_func=str.title)
     a, b, d = st.columns(3)
-    city = a.text_input("City *", c.city if c else "", placeholder="Krishnanagar")
-    city_bn = b.text_input("City in Bengali", (c.city_bn or "") if c else "", placeholder="কৃষ্ণনগর",
-                           help="Used for Bengali-script questions. Leave blank to use the English name.")
-    area = d.text_input("District / area", (c.area or "") if c else "", placeholder="Nadia")
+    city = a.text_input("City *", c.city if c else "", placeholder="e.g. Pune")
+    city_bn = b.text_input("City in local script", (c.city_bn or "") if c else "", placeholder="Optional",
+                           help="Used for regional-language questions. Leave blank to use the English name.")
+    area = d.text_input("District / area", (c.area or "") if c else "", placeholder="Optional")
     website = st.text_input("Website", (c.website or "") if c else "", placeholder="https://")
 
     st.subheader("Names AI might use")
     st.caption("Any of these in an AI answer counts as a mention. One per line.")
     a, b, d = st.columns(3)
     aliases = a.text_area("Other names / spellings", "\n".join(c.aliases) if c else "",
-                          placeholder="SSHRI Multispeciality Hospital")
+                          placeholder="e.g. City Heart Multispeciality")
     doctors = b.text_area("Doctors", "\n".join(c.doctors) if c else "", placeholder="Dr. Full Name",
                           disabled=False)
     phones = d.text_area("Phone numbers", "\n".join(c.phones) if c else "", placeholder="+91 98xxx xxxxx")
 
     st.subheader("Services")
-    st.caption("Each service becomes questions in English, Bengali and Banglish. "
+    st.caption("Each service becomes questions in English and regional languages. "
                "Hospitals: specialties. Coaching: courses or exams. Restaurants: dishes or cuisines.")
     services_df = pd.DataFrame(
         [vars(s) for s in c.services] if c and c.services else [],
@@ -68,7 +68,7 @@ with st.form(f"client-{choice}", border=True):
         services_df, num_rows="dynamic", width="stretch", key=f"services-{choice}",
         column_config={
             "name": st.column_config.TextColumn("Service", required=True),
-            "bn": st.column_config.TextColumn("In Bengali"),
+            "bn": st.column_config.TextColumn("In local script"),
             "page": st.column_config.TextColumn("Page on website", help="e.g. /cardiology"),
         },
     )

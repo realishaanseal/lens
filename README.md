@@ -1,8 +1,10 @@
 # Varaxis Lens
 
-**Know if AI recommends you.** AI visibility tracking for local businesses: hospitals, clinics, coaching centres and restaurants.
+**Know if AI recommends you.** AI visibility tracking for businesses that customers find through AI assistants: hospitals, clinics, coaching centres, restaurants and more.
 
-Lens asks ChatGPT, Gemini and Perplexity the questions real customers ask ("Best kidney doctor in Krishnanagar?"), in English, Bengali and Banglish. It records whether the business is named and who is recommended instead, tracks the mention rate month to month next to GA4 and Search Console numbers, and turns the results into a dashboard and a one-page monthly PDF.
+A Varaxis product.
+
+Lens asks ChatGPT, Gemini and Perplexity the questions real customers ask ("Best kidney doctor in <city>?"), in English and in regional languages (Bengali and Banglish built in, plus custom questions in any language). It records whether the business is named and who is recommended instead, tracks the mention rate month to month next to GA4 and Search Console numbers, and turns the results into a dashboard and a one-page monthly PDF.
 
 ```
 Prompt library → Scheduler → LLM APIs → Parser → Reports
@@ -30,6 +32,22 @@ python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 streamlit run app.py
 ```
+
+## Hosting (Streamlit Community Cloud)
+
+1. At share.streamlit.io, create an app from this repo with main file `app.py`.
+2. In **Advanced settings → Secrets**, add:
+
+   ```toml
+   LENS_PASSWORD = "choose-a-password"
+   OPENAI_API_KEY = "..."
+   GEMINI_API_KEY = "..."
+   PERPLEXITY_API_KEY = "..."
+   ```
+
+3. Deploy. With `LENS_PASSWORD` set, the app asks for it before showing anything.
+
+Streamlit Cloud's disk is temporary: results and clients added in the app reset when it restarts. Client files committed under `clients/` are kept.
 
 ## Command line
 
@@ -74,10 +92,10 @@ python -m lens import-traffic --client clients/sshri.yaml traffic.csv
 
 ## Client settings
 
-Clients are added on the **Clients** page and saved as YAML in `clients/` (see `clients/sshri.yaml`). The fields:
+Clients are added on the **Clients** page and saved as YAML in `clients/` (`clients/sshri.yaml` is an example). The fields:
 
 - **name, aliases, doctors, phones**: every way AI might refer to the business. Any of them counts as a mention.
-- **services**: each one becomes several questions. Add a Bengali name (`bn`) to get Bengali-script questions.
+- **services**: each one becomes several questions. Add a regional-language name (`bn`) to get questions in that script.
 - **competitors**: known rivals, merged with their aliases. Lens also picks up other businesses and doctors named in answers.
 - **listings, google_reviews, has_physician_schema**: inputs for fix suggestions.
 
@@ -88,7 +106,7 @@ The question templates for each category are in `lens/data/prompt_library.yaml`.
 - **Mention detection**: exact match on the name, aliases, doctor names and phone numbers, then fuzzy matching (88% similarity) for names of 8+ characters, so spelling variants still count.
 - **Competitor extraction**: known competitors plus any "<Name> Hospital / Nursing Home / Academy / Restaurant…" and "Dr. <Name>" in the answer.
 - **Mention rate**: answers naming the business ÷ answers checked, per AI tool and per month. Failed API calls are left out, and if a question is re-run in the same month only the latest answer counts.
-- **Fix suggestions**: rules for services AI never connects to the business, missing Physician schema, phone numbers that differ between listings, Bengali-language gaps, the competitor AI picks instead, and low review counts.
+- **Fix suggestions**: rules for services AI never connects to the business, missing Physician schema, phone numbers that differ between listings, regional-language gaps, the competitor AI picks instead, and low review counts.
 
 AI answers vary from run to run and over time. Lens stores every answer with its date, so each month is a snapshot rather than a guarantee.
 
@@ -96,7 +114,7 @@ AI answers vary from run to run and over time. Lens stores every answer with its
 
 ```
 app.py                     Streamlit app (start.sh / start.bat launch it)
-ui/                        app pages: dashboard, clients, settings
+ui/                        app pages (dashboard, clients, settings), theme and password screen
 clients/                   one YAML per client
 lens/
   config.py                client config loader
@@ -118,4 +136,4 @@ Run the tests with `pytest`.
 
 ## Team Varaxis
 
-Ishaan Seal (team lead), Ankit Shil, Yogish Keswani. Krishnanagar, West Bengal.
+Ishaan Seal (team lead), Ankit Shil, Yogish Keswani.
