@@ -1,0 +1,41 @@
+# Sample client (fictional). Copy this file per client and fill in the real details.
+id: meridian-hospital
+name: Meridian Multispeciality Hospital
+category: hospital          # hospital | clinic | coaching | restaurant
+city: Bengaluru
+area: Karnataka
+website: https://example.com
+languages: [en]             # en, bn (Bengali script), banglish
+
+# Every other way AI might write the name. Doctor names and phone numbers also count.
+aliases:
+  - Meridian Hospital
+  - Meridian Multispeciality
+doctors: []
+phones: []
+
+# Each service becomes several questions.
+services:
+  - {name: Cardiology, page: /cardiology}
+  - {name: Nephrology, page: /nephrology}
+  - {name: Orthopaedics, page: /orthopaedics}
+  - {name: Gynaecology, page: /gynaecology}
+  - {name: Neurology, page: /neurology}
+
+# Known competitors. Others named by AI are picked up automatically.
+competitors:
+  - name: Northgate Hospital
+    aliases: [Northgate]
+  - Lakeview Medical Centre
+  - CarePoint Super Speciality
+
+# Inputs for fix suggestions
+listings:
+  - {source: Website, phone: "+91 90000 00001"}
+  - {source: Google Business Profile, phone: "+91 90000 00002"}
+google_reviews: 64
+has_physician_schema: false
+
+max_prompts: 25
+extra_prompts:
+  - "Best kidney specialist in Bengaluru?"

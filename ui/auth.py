@@ -28,7 +28,7 @@ def require_login() -> None:
         st.html('<div style="height:12vh"></div>')
         st.image("ui/assets/logo.svg", width=150)
         st.html('<div style="height:20px"></div>')
-        with st.form("login", border=True):
+        with st.container(border=True), st.form("login", border=False):
             st.markdown("**Sign in**")
             entered = st.text_input("Password", type="password", label_visibility="collapsed",
                                     placeholder="Password")

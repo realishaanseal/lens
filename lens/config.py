@@ -8,12 +8,13 @@ from pathlib import Path
 import yaml
 
 CATEGORIES = ("hospital", "clinic", "coaching", "restaurant")
+LANGUAGES = ("en", "bn", "banglish")
 
 
 @dataclass
 class Service:
     name: str
-    bn: str | None = None  # Bengali name, used for Bengali-script prompts
+    bn: str | None = None  # name in the regional script, used for regional-language prompts
     page: str | None = None  # page on the client's site that covers this service
 
 
@@ -48,6 +49,14 @@ class Client:
     has_physician_schema: bool | None = None
     max_prompts: int = 25
     extra_prompts: list[str] = field(default_factory=list)
+    languages: list[str] | None = None  # None: English, plus regional if regional names are given
+
+    @property
+    def active_languages(self) -> list[str]:
+        if self.languages:
+            return [lang for lang in self.languages if lang in LANGUAGES]
+        regional = self.city_bn or any(s.bn for s in self.services)
+        return list(LANGUAGES) if regional else ["en"]
 
     @property
     def brand_names(self) -> list[str]:
@@ -96,6 +105,7 @@ def load_client(path: str | Path) -> Client:
         has_physician_schema=data.get("has_physician_schema"),
         max_prompts=int(data.get("max_prompts", 25)),
         extra_prompts=list(data.get("extra_prompts", [])),
+        languages=list(data["languages"]) if data.get("languages") else None,
     )
 
 
@@ -122,6 +132,7 @@ def client_to_dict(client: Client) -> dict:
         "listings": [vars(item) for item in client.listings],
         "google_reviews": client.google_reviews, "has_physician_schema": client.has_physician_schema,
         "max_prompts": client.max_prompts, "extra_prompts": client.extra_prompts,
+        "languages": client.languages,
     }
     return {k: v for k, v in data.items() if v not in (None, [], "")}
 

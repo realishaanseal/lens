@@ -94,7 +94,7 @@ def main(argv: list[str] | None = None):
 
     def add(name, fn, help_):
         p = sub.add_parser(name, help=help_)
-        p.add_argument("--client", required=True, help="client YAML, e.g. clients/sshri.yaml")
+        p.add_argument("--client", required=True, help="client YAML, e.g. clients/meridian-hospital.yaml")
         p.set_defaults(fn=fn)
         return p
 

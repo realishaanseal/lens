@@ -177,7 +177,7 @@ class MockProvider:
         weak = [w for s in c.services[2::3] for w in (s.name, s.bn) if w]
         if any(w.lower() in prompt.lower() for w in weak):
             rate *= 0.25
-        pool = [comp.name for comp in c.competitors] or ["City Care Hospital"]
+        pool = [comp.name for comp in c.competitors] or ["Another local business"]
         picks = rng.sample(pool, k=min(len(pool), rng.randint(2, 3)))
         if rng.random() < rate:
             picks.insert(rng.randint(0, len(picks)), rng.choice(c.brand_names))

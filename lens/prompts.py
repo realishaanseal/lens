@@ -56,8 +56,12 @@ def build_prompts(client: Client, library: dict | None = None) -> list[Prompt]:
     library = library or load_library()
     by_language = library.get(client.category, {})
 
-    groups: list[list[Prompt]] = []
+    allowed = set(client.active_languages)
+    streams: list[list[Prompt]] = []  # one interleaved stream per language
     for language, templates in by_language.items():
+        if language not in allowed:
+            continue
+        groups: list[list[Prompt]] = []
         for template in templates:
             uses_service = "{service" in template
             group = []
@@ -67,8 +71,9 @@ def build_prompts(client: Client, library: dict | None = None) -> list[Prompt]:
                     group.append(Prompt(prompt_id(text), text, language, service.name if service else None))
             if group:
                 groups.append(group)
+        streams.append([p for row in zip_longest(*groups) for p in row if p is not None])
 
-    interleaved = [p for row in zip_longest(*groups) for p in row if p is not None]
+    interleaved = [p for row in zip_longest(*streams) for p in row if p is not None]
     custom = [Prompt(prompt_id(t), t, "custom") for t in client.extra_prompts]
 
     seen: set[str] = set()

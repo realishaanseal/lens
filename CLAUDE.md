@@ -9,3 +9,5 @@
 - UI style: restrained and professional (neutral palette, hairlines, no gradients, emoji or decorative
   animation). Shared styles and components live in `ui/theme.py`.
 - Hosting target is Streamlit Community Cloud (not Vercel). `LENS_PASSWORD` turns on the password screen.
+- Sample clients in `clients/` are fictional and location-neutral in tone (different cities, English by default).
+  Question languages are per client (`languages`); regional ones are opt-in.
