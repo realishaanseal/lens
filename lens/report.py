@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from fpdf import FPDF
 
 from .config import Client
@@ -9,9 +11,9 @@ from .metrics import Summary, trend
 from .store import Store
 from .suggest import Suggestion
 
-INK = (17, 17, 17)
+INK = (11, 17, 24)  # brand ink #0B1118
 MUTED = (110, 110, 110)
-ACCENT = (232, 78, 27)
+ACCENT = (201, 118, 26)  # Lens amber #C9761A
 CARD = (243, 243, 243)
 
 
@@ -26,6 +28,9 @@ def _pct(value: float | None) -> str:
     return "-" if value is None else f"{value:.0%}"
 
 
+_LOGO = Path(__file__).resolve().parent.parent / "brand" / "masters" / "png" / "lens-horizontal.png"
+
+
 class _Report(FPDF):
     def header(self):
         pass
@@ -34,7 +39,7 @@ class _Report(FPDF):
         self.set_y(-12)
         self.set_font("Helvetica", size=7)
         self.set_text_color(*MUTED)
-        self.cell(0, 5, "VARAXIS LENS  -  Know if AI recommends you.", align="L")
+        self.cell(0, 5, "Lens by Varaxis  -  Know if AI recommends you.", align="L")
         self.cell(0, 5, f"{self.page_no()}", align="R")
 
 
@@ -45,6 +50,12 @@ def build_report(client: Client, summary: Summary, suggestions: list[Suggestion]
     pdf.set_margins(16, 16, 16)
     width = pdf.w - 32
 
+    if _LOGO.exists():  # the Lens by Varaxis lockup from brand/masters
+        try:
+            pdf.image(str(_LOGO), x=16, y=14, h=11)
+            pdf.set_y(31)
+        except Exception:  # an SVG the PDF library can't draw shouldn't stop the report
+            pass
     pdf.set_font("Helvetica", "B", 8)
     pdf.set_text_color(*ACCENT)
     pdf.cell(0, 5, _latin(f"AI VISIBILITY REPORT  -  {summary.period}"), new_x="LMARGIN", new_y="NEXT")

@@ -11,3 +11,6 @@
 - Hosting target is Streamlit Community Cloud (not Vercel). `LENS_PASSWORD` turns on the password screen.
 - Sample clients in `clients/` are fictional and location-neutral in tone (different cities, English by default).
   Question languages are per client (`languages`); regional ones are opt-in.
+- Brand: Lens's logo is in `brand/masters`, built by `brand/tools` on the Varaxis brand system (ink #0B1118,
+  Lens amber #C9761A, Montserrat wordmark, "BY VARAXIS" endorsement). Never redraw it by hand: change
+  `brand/tools/lens_geometry.py`, regenerate, and copy the app files into `ui/assets` (see brand/README.md).
