@@ -8,7 +8,7 @@ from lens.config import Client, list_client_files, load_client
 from lens.store import Store
 
 TOOL_NAMES = {"openai": "ChatGPT", "gemini": "Gemini", "perplexity": "Perplexity"}
-LANG_NAMES = {"en": "English", "bn": "Bengali", "banglish": "Banglish", "custom": "Custom"}
+LANG_NAMES = {"en": "English", "bn": "Bengali", "banglish": "Banglish", "custom": "Your questions"}
 
 
 @st.cache_resource

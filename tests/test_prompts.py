@@ -21,3 +21,12 @@ def test_extra_prompts_come_first_and_ids_are_stable(client):
     first = build_prompts(client)[0]
     assert first.language == "custom"
     assert first.id == prompt_id("best kidney doctor in krishnanagar?  ")
+
+
+def test_languages_default_to_english_without_regional_names(client):
+    client.city_bn = None
+    for s in client.services:
+        s.bn = None
+    assert {p.language for p in build_prompts(client)} <= {"en", "custom"}
+    client.languages = ["en", "banglish"]
+    assert "banglish" in {p.language for p in build_prompts(client)}

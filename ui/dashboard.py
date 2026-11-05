@@ -14,63 +14,96 @@ from lens.runner import run_check, seed_demo
 from lens.store import current_period
 from lens.suggest import suggest
 from ui.common import LANG_NAMES, TOOL_NAMES, client_picker, get_store, pct
-from ui.theme import INK, LINE, MUTED, SERIES, change_text, empty, fixes, gap, header, heading, month_label, rows, stats
+from ui.theme import (INK, LINE, MUTED, SERIES, change_text, cta, fixes, gap, heading, identity, month_label, rows,
+                      rule, stats)
 
 store = get_store()
+LANG_LABEL = {"en": "English", "bn": "Bengali", "banglish": "Banglish"}
+
+
+@st.dialog("Run a check", width="medium")
+def run_dialog(client) -> None:
+    keyed = available_providers()
+    st.caption(f"Lens asks each AI tool the customer questions for {client.name} and records who it recommends.")
+    use_mock = st.toggle("Use sample answers", value=not keyed,
+                         help="Generated answers instead of real API calls, for demos and testing.")
+    if not keyed and not use_mock:
+        st.warning("No AI tool is connected yet. Add an API key in Settings, or use sample answers.",
+                   icon=":material/key:")
+    chosen = st.pills("AI tools", PROVIDERS, selection_mode="multi", format_func=TOOL_NAMES.get,
+                      default=list(PROVIDERS) if use_mock else keyed)
+    total = len(build_prompts(client))
+    a, b = st.columns(2)
+    limit = a.number_input("Questions per tool", 1, total, total)
+    run_period = b.text_input("Month", current_period(), help="Format YYYY-MM")
+    calls = len(chosen or []) * int(limit)
+    st.caption(f"{calls} AI requests" + ("" if use_mock else " · usually a few minutes"))
+    if st.button("Start check", type="primary", width="stretch", disabled=not chosen or (not keyed and not use_mock)):
+        try:
+            providers = [MockProvider(n, client) if use_mock else get_provider(n, client) for n in chosen]
+        except (ValueError, ProviderError) as exc:
+            st.error(str(exc))
+            return
+        bar = st.progress(0.0, "Starting")
+        run_check(client, providers, store, period=run_period, limit=int(limit),
+                  progress=lambda done, total, label: bar.progress(done / total, label[:56]))
+        st.session_state["period"] = run_period
+        st.rerun()
+
 
 # ---- No client yet -------------------------------------------------------------
 client = client_picker()
 if client is None:
-    header("Welcome to Varaxis Lens", "See whether ChatGPT, Gemini and Perplexity recommend your business.")
-    empty("Add your first business",
-          "Lens builds the questions customers actually ask from the business name, city and services.",
-          ["Add the business on the Clients page.", "Connect at least one AI tool in Settings.",
-           "Run a check from the dashboard."])
+    identity("Varaxis Lens", ["AI visibility tracking"])
+    rule()
+    cta("Add your first business",
+        "Lens builds the questions customers actually ask AI assistants from the business name, "
+        "location and services, then tracks who gets recommended.")
     st.page_link("ui/clients.py", label="Add a client", icon=":material/arrow_forward:")
     st.stop()
 
 # ---- Sidebar -------------------------------------------------------------------
+months = periods(store, client.id)
 with st.sidebar:
-    months = periods(store, client.id)
-    period = st.selectbox("Month", list(reversed(months)), format_func=month_label) if months else None
+    period = None
+    if months:
+        options = list(reversed(months))
+        wanted = st.session_state.get("period")
+        period = st.selectbox("Month", options, index=options.index(wanted) if wanted in options else 0,
+                              format_func=month_label)
+        st.session_state["period"] = period
 
-    st.divider()
-    keyed = available_providers()
-    with st.expander("Run a check", expanded=not months, icon=":material/play_circle:"):
-        use_mock = st.toggle("Use sample answers", value=not keyed,
-                             help="Generated answers instead of real API calls. For demos and testing.")
-        chosen = st.multiselect("AI tools", PROVIDERS, default=list(PROVIDERS) if use_mock else keyed,
-                                format_func=TOOL_NAMES.get, placeholder="Choose tools")
-        limit = st.number_input("Questions", 1, client.max_prompts, client.max_prompts)
-        run_period = st.text_input("Month", current_period(), help="Format YYYY-MM")
-        if st.button("Run check", type="primary", disabled=not chosen, width="stretch"):
-            try:
-                providers = [MockProvider(n, client) if use_mock else get_provider(n, client) for n in chosen]
-            except (ValueError, ProviderError) as exc:
-                st.error(str(exc))
-            else:
-                bar = st.progress(0.0, "Starting")
-                run_check(client, providers, store, period=run_period, limit=int(limit),
-                          progress=lambda done, total, label: bar.progress(done / total, label[:48]))
-                st.rerun()
-        if not months and st.button("Load sample data", width="stretch",
-                                    help="Five months of sample answers so you can explore the dashboard."):
-            seed_demo(client, store)
-            st.rerun()
-
+# ---- Header --------------------------------------------------------------------
 location = ", ".join(x for x in [client.city, client.area] if x)
-header(client.name, f"{client.category.title()} · {location}", month_label(period) if period else "")
+languages = " · ".join(LANG_LABEL[l] for l in client.active_languages)
+head, actions = st.columns([3, 2], vertical_alignment="center")
+with head:
+    identity(client.name, [client.category.title(), location, languages,
+                           month_label(period) if period else ""])
+with actions:
+    if period:
+        x, y = st.columns(2)
+        report_slot = x.empty()
+        if y.button("Run check", type="primary", icon=":material/play_arrow:", width="stretch"):
+            run_dialog(client)
+rule()
 
 if not period:
     prompts = build_prompts(client)
-    empty("No checks yet",
-          f"Lens will ask each AI tool {min(len(prompts), client.max_prompts)} questions and record whether "
-          f"{client.name} is recommended.",
-          ["Connect an AI tool in Settings, or turn on sample answers.",
-           "Open Run a check in the sidebar and press Run check.",
-           "Review the mention rate, competitors and suggested fixes here."])
+    cta("Run your first check",
+        f"Lens will ask ChatGPT, Gemini and Perplexity {len(prompts)} questions customers ask about "
+        f"{client.category}s in {client.city}, and show whether {client.name} is recommended, who is "
+        "recommended instead, and what to fix.")
+    c1, c2, _ = st.columns([1, 1, 3])
+    if c1.button("Run first check", type="primary", width="stretch"):
+        run_dialog(client)
+    if c2.button("Explore sample data", width="stretch",
+                 help="Five months of generated answers so you can see a full dashboard."):
+        with st.spinner("Generating sample months"):
+            seed_demo(client, store)
+        st.rerun()
     gap()
-    heading("Questions", f"{len(prompts)} total")
+    heading("Questions Lens will ask", f"{len(prompts)} total")
     st.dataframe(pd.DataFrame([{"Language": LANG_NAMES.get(p.language, p.language), "Question": p.text}
                                for p in prompts]), hide_index=True, width="stretch")
     st.stop()
@@ -80,6 +113,9 @@ results = latest_results(store, client.id, period)
 suggestions = sorted(suggest(client, results), key=lambda s: s.priority)
 idx = months.index(period)
 previous = month_label(months[idx - 1]).split()[0] if idx > 0 else "last month"
+report_slot.download_button("Export PDF", build_report(client, summary, suggestions, store),
+                            file_name=f"{client.id}-{period}.pdf", mime="application/pdf",
+                            icon=":material/download:", width="stretch")
 
 # ---- Headline numbers ----------------------------------------------------------
 stats([
@@ -194,9 +230,3 @@ for r in sorted(shown, key=lambda r: (r["prompt"], r["provider"])):
         facts.append(f"{r['model']} · {r['created_at'][:16]}")
         st.caption("  \n".join(facts))
         st.markdown(r["answer"])
-
-# ---- Report --------------------------------------------------------------------
-with st.sidebar:
-    st.download_button("Download PDF report", build_report(client, summary, suggestions, store),
-                       file_name=f"{client.id}-{period}.pdf", mime="application/pdf",
-                       icon=":material/download:", width="stretch")

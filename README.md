@@ -58,10 +58,10 @@ export OPENAI_API_KEY=...       # ChatGPT (Responses API with web search)
 export GEMINI_API_KEY=...       # Gemini (with Google Search grounding)
 export PERPLEXITY_API_KEY=...   # Perplexity (sonar)
 
-python -m lens prompts --client clients/sshri.yaml          # see the questions
-python -m lens run --client clients/sshri.yaml --limit 3    # cheap test run
-python -m lens run --client clients/sshri.yaml              # full monthly check
-python -m lens report --client clients/sshri.yaml           # writes reports/<id>-<month>.pdf
+python -m lens prompts --client clients/meridian-hospital.yaml          # see the questions
+python -m lens run --client clients/meridian-hospital.yaml --limit 3    # cheap test run
+python -m lens run --client clients/meridian-hospital.yaml              # full monthly check
+python -m lens report --client clients/meridian-hospital.yaml           # writes reports/<id>-<month>.pdf
 ```
 
 `run` uses every provider with a key unless you pass `--providers openai,gemini`. Models can be changed with `LENS_OPENAI_MODEL`, `LENS_GEMINI_MODEL` and `LENS_PERPLEXITY_MODEL`. Results go to `data/lens.db` (override with `LENS_DB` or `--db`).
@@ -71,7 +71,7 @@ python -m lens report --client clients/sshri.yaml           # writes reports/<id
 Run the check on the 1st of each month with cron:
 
 ```cron
-0 6 1 * * cd /path/to/lens && .venv/bin/python -m lens run --client clients/sshri.yaml && .venv/bin/python -m lens report --client clients/sshri.yaml
+0 6 1 * * cd /path/to/lens && .venv/bin/python -m lens run --client clients/meridian-hospital.yaml && .venv/bin/python -m lens report --client clients/meridian-hospital.yaml
 ```
 
 ### GA4 and Search Console
@@ -87,15 +87,16 @@ period,source,metric,value
 ```
 
 ```bash
-python -m lens import-traffic --client clients/sshri.yaml traffic.csv
+python -m lens import-traffic --client clients/meridian-hospital.yaml traffic.csv
 ```
 
 ## Client settings
 
-Clients are added on the **Clients** page and saved as YAML in `clients/` (`clients/sshri.yaml` is an example). The fields:
+Clients are added on the **Clients** page and saved as YAML in `clients/` (`clients/meridian-hospital.yaml` and `clients/saffron-table.yaml` are fictional samples). The fields:
 
 - **name, aliases, doctors, phones**: every way AI might refer to the business. Any of them counts as a mention.
-- **services**: each one becomes several questions. Add a regional-language name (`bn`) to get questions in that script.
+- **languages**: which question languages to use (`en`, `bn`, `banglish`). English only by default.
+- **services**: each one becomes several questions. Add a regional-language name (`bn`) for regional-script questions.
 - **competitors**: known rivals, merged with their aliases. Lens also picks up other businesses and doctors named in answers.
 - **listings, google_reviews, has_physician_schema**: inputs for fix suggestions.
 

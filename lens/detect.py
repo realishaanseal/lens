@@ -77,8 +77,8 @@ def find_name(text: str, names: list[str]) -> Mention:
             return Mention(True, name, 1.0, _snippet(text, name))
         if len(norm_name) < FUZZY_MIN_LENGTH:
             continue
-        # Same word count, or one extra word inside the name ("SSHRI Hospital" vs
-        # "SSHRI Multi Hospital"). Never fewer words: "Hospital" alone must not
+        # Same word count, or one extra word inside the name ("Meridian Hospital" vs
+        # "Meridian Multi Hospital"). Never fewer words: "Hospital" alone must not
         # match "Hospital B".
         size = len(norm_name.split())
         for width in (size, size + 1) if size > 1 else (size,):

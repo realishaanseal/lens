@@ -1,0 +1,23 @@
+# Sample client (fictional).
+id: saffron-table
+name: Saffron Table
+category: restaurant
+city: Dubai
+website: https://example.com
+languages: [en]
+
+aliases:
+  - Saffron Table Restaurant
+services:
+  - {name: Biryani}
+  - {name: North Indian food}
+  - {name: weekend brunch}
+competitors:
+  - Spice Route Kitchen
+  - The Copper Pot
+  - Tandoor House
+listings:
+  - {source: Website, phone: "+971 4 000 0001"}
+  - {source: Google Business Profile, phone: "+971 4 000 0001"}
+google_reviews: 212
+max_prompts: 20
