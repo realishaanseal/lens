@@ -1,9 +1,9 @@
 [theme]
 base = "light"
-primaryColor = "#18181B"
+primaryColor = "#0B1118"
 backgroundColor = "#FFFFFF"
 secondaryBackgroundColor = "#F4F4F5"
-textColor = "#18181B"
+textColor = "#0B1118"
 font = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
 headingFont = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
 borderColor = "#E4E4E7"

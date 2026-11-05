@@ -2,16 +2,18 @@
 
 from __future__ import annotations
 
+import base64
 import calendar
 from html import escape
 from pathlib import Path
 
 import streamlit as st
 
-INK = "#18181B"
+INK = "#0B1118"
 MUTED = "#71717A"
 LINE = "#E4E4E7"
 ACCENT = "#2563EB"
+BRAND_ACCENT = "#C9761A"  # Lens amber, from brand/masters
 GOOD = "#16A34A"
 BAD = "#DC2626"
 SERIES = {"All tools": INK, "ChatGPT": INK, "Gemini": ACCENT, "Perplexity": "#A1A1AA"}
@@ -67,7 +69,7 @@ h1, h2, h3, h4 { letter-spacing:-0.015em; font-weight:600 !important; }
 .lx-row:last-child { border-bottom:0; }
 .lx-row .n { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .lx-row .t { height:4px; background:#F4F4F5; border-radius:2px; overflow:hidden; }
-.lx-row .t i { display:block; height:100%; background:#18181B; }
+.lx-row .t i { display:block; height:100%; background:#0B1118; }
 .lx-row .p { text-align:right; color:#52525B; font-variant-numeric:tabular-nums; }
 
 .lx-fix { padding:12px 0; border-bottom:1px solid #F4F4F5; }
@@ -84,7 +86,7 @@ h1, h2, h3, h4 { letter-spacing:-0.015em; font-weight:600 !important; }
 .lx-gap { height:36px; }
 .lx-hr { border:0; border-top:1px solid #E4E4E7; margin:22px 0 30px; }
 .lx-id { display:flex; align-items:center; gap:14px; min-width:0; }
-.lx-av { flex-shrink:0; width:46px; height:46px; border-radius:11px; background:#18181B; color:#FAFAFA;
+.lx-av { flex-shrink:0; width:46px; height:46px; border-radius:11px; background:#0B1118; color:#FAFAFA;
   display:grid; place-items:center; font-weight:600; font-size:15px; letter-spacing:.02em; }
 .lx-av.sm { width:34px; height:34px; border-radius:8px; font-size:12px; background:#F4F4F5; color:#3F3F46;
   border:1px solid #E4E4E7; }
@@ -101,7 +103,7 @@ h1, h2, h3, h4 { letter-spacing:-0.015em; font-weight:600 !important; }
 .lx-cta p { color:#71717A; font-size:13.5px; margin:0; max-width:620px; line-height:1.55; }
 /* Loading: thin progress line while the app works, shown only if work takes over 250ms */
 .stApp[data-test-script-state="running"]::before { content:""; position:fixed; top:0; left:0; height:2px;
-  width:32%; background:#18181B; z-index:1000020; opacity:0;
+  width:32%; background:#0B1118; z-index:1000020; opacity:0;
   animation: lxSlide 1.1s cubic-bezier(.45,0,.25,1) .25s infinite, lxIn .2s ease .25s forwards; }
 @keyframes lxSlide { 0% { transform:translateX(-100%); } 100% { transform:translateX(320%); } }
 @keyframes lxIn { to { opacity:1; } }
@@ -148,22 +150,22 @@ h1, h2, h3, h4 { letter-spacing:-0.015em; font-weight:600 !important; }
 @keyframes lxBootOut { 0%, 25% { opacity:1; visibility:visible; transform:none; filter:none; }
   100% { opacity:0; visibility:hidden; transform:scale(1.04); filter:blur(10px); } }
 .lx-boot-inner { display:flex; flex-direction:column; align-items:center; }
-.lx-lens { position:relative; width:84px; height:84px; animation: lxPop 1s var(--e-out) both; }
-.lx-ring { position:absolute; inset:0; border-radius:50%; border:1.5px solid #EDEDEF; }
-.lx-ring.spin { border-color:transparent; border-top-color:#18181B; animation: lxSpin 1.4s var(--e-io) infinite; }
-.lx-ring.spin.two { inset:7px; border-top-color:#A1A1AA; animation-duration:2.1s; animation-direction:reverse; }
-.lx-mark { position:absolute; inset:22px; border-radius:11px; background:#18181B; display:grid; place-items:center;
-  box-shadow:0 10px 30px -12px rgba(24,24,27,.6); }
-.lx-glass { position:relative; width:17px; height:17px; margin:-3px 0 0 -3px; border:3px solid #FFFFFF;
-  border-radius:50%; animation: lxIris 2.2s var(--e-io) .6s infinite; }
-.lx-glass::after { content:""; position:absolute; width:7px; height:3px; background:#FFFFFF; border-radius:2px;
-  right:-7px; bottom:-4px; transform:rotate(45deg); }
-.lx-word { margin-top:26px; font-size:17px; font-weight:600; letter-spacing:-.02em; color:#18181B; white-space:pre; }
-.lx-word span { display:inline-block; animation: lxFocusIn .9s var(--e-out) both;
-  animation-delay:calc(.35s + var(--i) * .035s); }
+.lx-lens { position:relative; width:84px; height:84px; margin:0 9px 28px 0; animation: lxPop 1s var(--e-out) both; }
+.lx-aperture { position:absolute; inset:0; border-radius:50%; background:#0B1118;
+  animation: lxSpin 2.4s var(--e-io) infinite; }
+.lx-aperture::before { content:""; position:absolute; inset:25%; border-radius:50%; background:#FFFFFF; }   /* r = R/2 */
+.lx-aperture::after { content:""; position:absolute; left:-2px; right:-2px; top:50%; height:4.2px; margin-top:-2.1px;
+  background:#FFFFFF; transform:rotate(-56.31deg); }                                                          /* the V-angle crease */
+/* handle: 150 units wide, from 330 to 550 units out along the mirrored V angle (ring R = 300 = 42px) */
+.lx-handle { position:absolute; left:50%; top:50%; width:30.8px; height:21px; margin:-10.5px 0 0 -15.4px;
+  background:#0B1118; border-radius:2px 7px 7px 2px;
+  transform:translate(34.2px, 51.2px) rotate(56.31deg); }
+.lx-pupil { position:absolute; inset:30%; border-radius:50%; background:#C9761A; z-index:1;
+  animation: lxIris 2.4s var(--e-io) .4s infinite; }
+.lx-word { display:block; margin-top:6px; height:34px; animation: lxFocusIn 1s var(--e-out) .35s both; }
 .lx-bar { position:relative; width:148px; height:2px; margin-top:20px; border-radius:2px; background:#F4F4F5;
   overflow:hidden; animation: lxRise .8s var(--e-out) .6s both; }
-.lx-bar i { position:absolute; inset:0; width:40%; border-radius:2px; background:#18181B;
+.lx-bar i { position:absolute; inset:0; width:40%; border-radius:2px; background:#0B1118;
   animation: lxTrack 1.5s var(--e-io) infinite; }
 .lx-steps { position:relative; height:18px; width:260px; margin-top:16px; text-align:center; font-size:13px; color:#71717A; }
 .lx-steps span { position:absolute; inset:0; opacity:0; animation: lxStep 3.6s var(--e-io) .8s infinite; }
@@ -187,7 +189,7 @@ h1, h2, h3, h4 { letter-spacing:-0.015em; font-weight:600 !important; }
 .lx-stat:hover { background:#FCFCFC; }
 .lx-stat .k { display:flex; align-items:center; gap:7px; }
 .lx-stat .k::before { content:""; width:6px; height:6px; border-radius:2px; background:#D4D4D8; }
-.lx-stat:first-child .k::before { background:#18181B; }
+.lx-stat:first-child .k::before { background:#C9761A; }
 .lx-cta, .lx-empty { border:1px solid var(--line); border-radius:var(--r-lg); background:#FFFFFF; box-shadow:var(--sh-sm); }
 [data-testid="stVerticalBlock"][data-test-scroll-behavior] { border-color:var(--line) !important;
   border-radius:var(--r-lg) !important; background:#FFFFFF; box-shadow:var(--sh-sm);
@@ -210,7 +212,7 @@ h1, h2, h3, h4 { letter-spacing:-0.015em; font-weight:600 !important; }
   transition:border-color .2s var(--e-out), box-shadow .2s var(--e-out) !important; }
 [data-baseweb="input"]:hover, [data-baseweb="textarea"]:hover, [data-baseweb="select"] > div:hover { border-color:#D4D4D8 !important; }
 [data-baseweb="input"]:focus-within, [data-baseweb="textarea"]:focus-within, [data-baseweb="select"] > div:focus-within {
-  border-color:#18181B !important; box-shadow:var(--ring) !important; }
+  border-color:#0B1118 !important; box-shadow:var(--ring) !important; }
 [data-testid="stNumberInputContainer"] { border-radius:10px !important; }
 [data-testid="stNumberInputContainer"] button { border-radius:0 !important; }
 [data-baseweb="tag"] { border-radius:999px !important; padding-left:10px !important; }
@@ -225,7 +227,7 @@ h1, h2, h3, h4 { letter-spacing:-0.015em; font-weight:600 !important; }
 button[kind="secondary"], button[kind="secondaryFormSubmit"] { background:#FFFFFF !important; border-color:var(--line-2) !important;
   box-shadow:var(--sh-xs); }
 button[kind="secondary"]:hover, button[kind="secondaryFormSubmit"]:hover { background:#FAFAFA !important; border-color:#D4D4D8 !important;
-  color:#18181B !important; }
+  color:#0B1118 !important; }
 button[kind="primary"], button[kind="primaryFormSubmit"] {
   box-shadow:inset 0 1px 0 rgba(255,255,255,.12), 0 1px 2px rgba(16,16,20,.2), 0 4px 12px -6px rgba(16,16,20,.5); }
 button:focus-visible { outline:none !important; box-shadow:var(--ring) !important; }
@@ -236,31 +238,31 @@ button:focus-visible { outline:none !important; box-shadow:var(--ring) !importan
 [data-testid="stButtonGroup"] button { border:0 !important; background:transparent !important; border-radius:8px !important;
   color:#52525B !important; box-shadow:none !important; min-height:30px; padding:0 12px !important;
   transition:background-color .25s var(--e-out), color .25s var(--e-out), box-shadow .25s var(--e-out) !important; }
-[data-testid="stButtonGroup"] button:hover { color:#18181B !important; }
+[data-testid="stButtonGroup"] button:hover { color:#0B1118 !important; }
 [data-testid="stButtonGroup"] button[aria-checked="true"], [data-testid="stButtonGroup"] button[data-selected="true"] {
-  background:#FFFFFF !important; color:#18181B !important;
+  background:#FFFFFF !important; color:#0B1118 !important;
   box-shadow:0 1px 2px rgba(16,16,20,.08), 0 1px 1px rgba(16,16,20,.04) !important; }
 [data-testid="stButtonGroup"] button[data-variant="pills"] { gap:7px; }
 [data-testid="stButtonGroup"] button[data-variant="pills"]::before { content:""; width:7px; height:7px; border-radius:50%;
   border:1.5px solid #A1A1AA; transition:background-color .25s var(--e-out), border-color .25s var(--e-out); }
-[data-testid="stButtonGroup"] button[data-variant="pills"][data-selected="true"]::before { background:#18181B; border-color:#18181B; }
+[data-testid="stButtonGroup"] button[data-variant="pills"][data-selected="true"]::before { background:#0B1118; border-color:#0B1118; }
 [data-testid="InputInstructions"] { display:none !important; }
 [data-testid="stNumberInputContainer"] button { background:#FFFFFF !important; border-left:1px solid var(--line) !important;
   color:#52525B !important; transition:background-color .15s; }
-[data-testid="stNumberInputContainer"] button:hover { background:#FAFAFA !important; color:#18181B !important; }
+[data-testid="stNumberInputContainer"] button:hover { background:#FAFAFA !important; color:#0B1118 !important; }
 [data-testid="stTextInputRootElement"], [data-testid="stTextAreaRootElement"] { background:#FFFFFF !important;
   border-radius:10px !important; border-color:var(--line-2) !important; box-shadow:var(--sh-xs);
   transition:border-color .2s var(--e-out), box-shadow .2s var(--e-out); }
 [data-testid="stTextInputRootElement"]:hover, [data-testid="stTextAreaRootElement"]:hover { border-color:#D4D4D8 !important; }
 [data-testid="stTextInputRootElement"]:focus-within, [data-testid="stTextAreaRootElement"]:focus-within {
-  border-color:#18181B !important; box-shadow:var(--ring) !important; }
+  border-color:#0B1118 !important; box-shadow:var(--ring) !important; }
 [data-testid="stTextInputRootElement"] button { background:#FFFFFF !important; }
 [data-testid="stDialog"] [role="dialog"] h2 { font-size:19px !important; font-weight:600 !important; letter-spacing:-.015em; }
 
 /* Tags, pills, avatars */
 .lx-pill { background:#FFFFFF; border:1px solid var(--line); box-shadow:var(--sh-xs); color:#3F3F46; font-weight:500;
   padding:3px 10px; display:inline-flex; align-items:center; gap:6px; }
-.lx-pill:first-child::before { content:""; width:6px; height:6px; border-radius:50%; background:#18181B; }
+.lx-pill:first-child::before { content:""; width:6px; height:6px; border-radius:50%; background:#C9761A; }
 .lx-tag { display:inline-flex; align-items:center; gap:5px; border-radius:999px; padding:1px 8px 1px 7px; font-weight:500;
   background:#FAFAFA; border-color:var(--line); }
 .lx-tag::before { content:""; width:5px; height:5px; border-radius:50%; background:currentColor; opacity:.8; }
@@ -415,15 +417,18 @@ def cta(title: str, body: str) -> None:
 
 _LOADER = """
 <div class="lx-boot" role="status" aria-live="polite" aria-label="Loading"><div class="lx-boot-inner">
-  <div class="lx-lens"><div class="lx-ring"></div><div class="lx-ring spin"></div><div class="lx-ring spin two"></div>
-    <div class="lx-mark"><div class="lx-glass"></div></div></div>
-  <div class="lx-word" aria-hidden="true"><span style="--i:0">V</span><span style="--i:1">a</span><span style="--i:2">r</span><span style="--i:3">a</span><span style="--i:4">x</span><span style="--i:5">i</span><span style="--i:6">s</span><span style="--i:7"> </span><span style="--i:8">L</span><span style="--i:9">e</span><span style="--i:10">n</span><span style="--i:11">s</span></div>
+  <div class="lx-lens"><div class="lx-aperture"></div><div class="lx-handle"></div><div class="lx-pupil"></div></div>
+  <img class="lx-word" alt="Lens by Varaxis" src="{WORDMARK}">
   <div class="lx-bar"><i></i></div>
   <div class="lx-steps"><span>Loading your clients</span><span>Reading the latest answers</span><span>Preparing your dashboard</span></div>
 </div></div>
 """
 
 
+_WORDMARK = _ASSETS / "wordmark-endorsed.svg"
+
+
 def loading_screen() -> None:
     """Full-screen loader, shown while the current run builds the page, then faded out."""
-    st.html(_LOADER)
+    data = base64.b64encode(_WORDMARK.read_bytes()).decode()
+    st.html(_LOADER.replace("{WORDMARK}", f"data:image/svg+xml;base64,{data}"))

@@ -1,8 +1,13 @@
-# Varaxis Lens
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="brand/masters/lens-horizontal-reverse.svg">
+    <img src="brand/masters/lens-horizontal.svg" alt="Lens by Varaxis" width="340">
+  </picture>
+</p>
 
-**Know if AI recommends you.** AI visibility tracking for businesses that customers find through AI assistants: hospitals, clinics, coaching centres, restaurants and more.
+<p align="center"><b>Know if AI recommends you.</b></p>
 
-A Varaxis product.
+Lens tracks AI visibility for businesses that customers find through AI assistants: hospitals, clinics, coaching centres, restaurants and more. It is a Varaxis product, alongside Scholar and ClinicOS.
 
 Lens asks ChatGPT, Gemini and Perplexity the questions real customers ask ("Best kidney doctor in <city>?"), in English and in regional languages (Bengali and Banglish built in, plus custom questions in any language). It records whether the business is named and who is recommended instead, tracks the mention rate month to month next to GA4 and Search Console numbers, and turns the results into a dashboard and a one-page monthly PDF.
 
@@ -116,6 +121,8 @@ AI answers vary from run to run and over time. Lens stores every answer with its
 ```
 app.py                     Streamlit app (start.sh / start.bat launch it)
 ui/                        app pages (dashboard, clients, settings), theme and password screen
+  assets/                  logo and icon used by the app (copied from brand/masters)
+brand/                     the Lens mark and lockups, on the Varaxis brand system (see brand/README.md)
 clients/                   one YAML per client
 lens/
   config.py                client config loader
@@ -134,6 +141,17 @@ tests/
 ```
 
 Run the tests with `pytest`.
+
+## Brand
+
+The Lens mark is a search lens: a ring split by one crease at the Varaxis V angle, around an amber pupil, with a handle along the mirror of that angle. It is built on the same system as the Varaxis, Scholar and ClinicOS masters: the same ink, the same Montserrat wordmark and "BY VARAXIS" endorsement, and exactly one accent piece.
+
+| | Light grounds | Dark grounds |
+|---|---|---|
+| Ink | `#0B1118` | `#E7EEF2` |
+| Lens amber (the pupil) | `#C9761A` | `#E6A04F` |
+
+All logo files are in [`brand/masters`](brand/masters), with PNG exports in `brand/masters/png`. Construction rules, usage and how to regenerate them are in [`brand/README.md`](brand/README.md).
 
 ## Team Varaxis
 

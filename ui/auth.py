@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import base64
 import hmac
 import os
+from pathlib import Path
 
 import streamlit as st
 
@@ -25,12 +27,13 @@ def require_login() -> None:
         return
     st.html("<style>[data-testid='stSidebar'], [data-testid='stSidebarCollapsedControl'], "
             "[data-testid='stExpandSidebarButton'] { display:none !important; }"
-            "[data-testid='stImage'] { animation: lxFocusIn 1s var(--e-out) both; }"
+            ".lx-signin-logo { display:flex; justify-content:center; animation: lxFocusIn 1s var(--e-out) both; }"
             "[data-testid='stVerticalBlockBorderWrapper'] { animation: lxRise .9s var(--e-out) .12s both; }</style>")
     _, mid, _ = st.columns([1, 1.2, 1])
     with mid:
         st.html('<div style="height:12vh"></div>')
-        st.image("ui/assets/logo.svg", width=150)
+        logo = base64.b64encode(Path("ui/assets/logo-endorsed.svg").read_bytes()).decode()
+        st.html(f'<div class="lx-signin-logo"><img src="data:image/svg+xml;base64,{logo}" alt="Lens by Varaxis" width="200"></div>')
         st.html('<div style="height:20px"></div>')
         with st.container(border=True), st.form("login", border=False):
             st.markdown("**Sign in**")
