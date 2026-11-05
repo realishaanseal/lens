@@ -248,7 +248,13 @@ button:focus-visible { outline:none !important; box-shadow:var(--ring) !importan
 [data-testid="stNumberInputContainer"] button { background:#FFFFFF !important; border-left:1px solid var(--line) !important;
   color:#52525B !important; transition:background-color .15s; }
 [data-testid="stNumberInputContainer"] button:hover { background:#FAFAFA !important; color:#18181B !important; }
-[data-baseweb="input"] > div, [data-baseweb="input"] button { background:#FFFFFF !important; }
+[data-testid="stTextInputRootElement"], [data-testid="stTextAreaRootElement"] { background:#FFFFFF !important;
+  border-radius:10px !important; border-color:var(--line-2) !important; box-shadow:var(--sh-xs);
+  transition:border-color .2s var(--e-out), box-shadow .2s var(--e-out); }
+[data-testid="stTextInputRootElement"]:hover, [data-testid="stTextAreaRootElement"]:hover { border-color:#D4D4D8 !important; }
+[data-testid="stTextInputRootElement"]:focus-within, [data-testid="stTextAreaRootElement"]:focus-within {
+  border-color:#18181B !important; box-shadow:var(--ring) !important; }
+[data-testid="stTextInputRootElement"] button { background:#FFFFFF !important; }
 [data-testid="stDialog"] [role="dialog"] h2 { font-size:19px !important; font-weight:600 !important; letter-spacing:-.015em; }
 
 /* Tags, pills, avatars */
