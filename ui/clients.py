@@ -8,7 +8,7 @@ import streamlit as st
 from lens.config import CATEGORIES, Client, Competitor, Listing, Service, save_client, slugify
 from lens.prompts import build_prompts
 from ui.common import LANG_NAMES, load_clients
-from ui.theme import hero
+from ui.theme import header
 
 NEW = "__new__"
 SCHEMA_CHOICES = {"Not checked": None, "Yes": True, "No": False}
@@ -27,12 +27,12 @@ def table_rows(df: pd.DataFrame) -> list[dict]:
     return rows
 
 
-hero("Workspace", "Clients", "Businesses Lens tracks. Each one gets its own questions, competitors and reports.")
+header("Clients", "Each business has its own questions, competitors and reports.")
 clients = load_clients()
 options = [NEW, *clients]
 default = st.session_state.get("client_id") if st.session_state.get("client_id") in clients else NEW
-choice = st.selectbox("Edit", options, index=options.index(default),
-                      format_func=lambda i: "＋ New client" if i == NEW else clients[i].name)
+choice = st.selectbox("Client", options, index=options.index(default),
+                      format_func=lambda i: "New client" if i == NEW else clients[i].name)
 c: Client | None = clients.get(choice)
 
 with st.form(f"client-{choice}", border=True):
@@ -48,7 +48,7 @@ with st.form(f"client-{choice}", border=True):
     area = d.text_input("District / area", (c.area or "") if c else "", placeholder="Nadia")
     website = st.text_input("Website", (c.website or "") if c else "", placeholder="https://")
 
-    st.subheader("How AI might name them")
+    st.subheader("Names AI might use")
     st.caption("Any of these in an AI answer counts as a mention. One per line.")
     a, b, d = st.columns(3)
     aliases = a.text_area("Other names / spellings", "\n".join(c.aliases) if c else "",
@@ -82,7 +82,7 @@ with st.form(f"client-{choice}", border=True):
              "Businesses AI names that aren't listed here are still picked up.",
     )
 
-    st.subheader("For fix suggestions")
+    st.subheader("Listings and reviews")
     st.caption("The phone number shown on each listing. Different numbers get flagged.")
     listings_df = pd.DataFrame([vars(item) for item in c.listings] if c and c.listings else [],
                                columns=["source", "phone"])
@@ -103,7 +103,7 @@ with st.form(f"client-{choice}", border=True):
     extra = st.text_area("Extra questions, one per line", "\n".join(c.extra_prompts) if c else "",
                          placeholder="Typed the way a customer would ask")
 
-    submitted = st.form_submit_button("Save client", type="primary", icon=":material/save:")
+    submitted = st.form_submit_button("Save client", type="primary")
 
 if submitted:
     missing = [label for label, value in [("Business name", name), ("City", city)] if not value.strip()]
@@ -141,4 +141,4 @@ if c:
     with st.expander(f"Questions Lens will ask ({len(prompts)})", expanded=submitted):
         st.dataframe(pd.DataFrame([{"Language": LANG_NAMES.get(p.language, p.language), "Question": p.text}
                                    for p in prompts]), hide_index=True, width="stretch")
-    st.page_link("ui/dashboard.py", label="Go to dashboard", icon=":material/insights:")
+    st.page_link("ui/dashboard.py", label="Open dashboard", icon=":material/arrow_forward:")
