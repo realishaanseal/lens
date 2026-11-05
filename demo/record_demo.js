@@ -50,12 +50,16 @@ const CURSOR = `(() => {
   const text = async (sel) => (await page.locator(sel).first().textContent().catch(() => '')).trim();
 
   const scenes = []; const facts = {};
+  // Optional: real voice-over lengths (seconds per scene, from voiceover.py --clips-only), so each scene
+  // is held for its actual narration plus a breath instead of an estimate.
+  const VOICE = process.env.SCENE_SECONDS ? JSON.parse(fs.readFileSync(process.env.SCENE_SECONDS, 'utf8')) : null;
   // Each scene: narration (template, filled from facts at the end) and actions. The scene lasts at least
   // as long as its narration takes to read.
   async function scene(title, onScreen, narration, actions) {
     const start = now(); await actions(); await sleep(150);
     const words = narration.replace(/\{\w+\}/g, 'xx').split(/\s+/).length;
-    const need = words / WPS + 0.8; const spent = now() - start;
+    const i = scenes.length;
+    const need = VOICE && VOICE[i] ? VOICE[i] + 1.1 : words / WPS + 0.8; const spent = now() - start;
     if (spent < need) await sleep((need - spent) * 1000);
     scenes.push({ title, onScreen, narration, start, end: now() });
     console.log(`${start.toFixed(1)}s  ${title}`);

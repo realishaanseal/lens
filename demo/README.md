@@ -31,3 +31,16 @@ python demo/build_outputs.py $D/out
 - Sample history ends the month before the recording, so the live "Run check" adds the current month to the trend.
 - `LENS_MOCK_DELAY` paces sample answers so the status lines are readable; `LENS_MOCK_RATE` sets how often sample answers name the client. Both only affect sample answers.
 - Change the narration in `record_demo.js` (each `scene(...)`); `{name}` placeholders are filled from the screen.
+
+## Voice-over (ElevenLabs)
+
+`voiceover.py` voices the script with an ElevenLabs voice and lays it onto the video. The API key is read from `XI_API_KEY` and never stored. For the best sync, voice first and record to the voice:
+
+```bash
+XI_API_KEY=... python demo/voiceover.py $D/out NvA7c85NkZVpFBAHHQQ3 --clips-only   # clips + voice/durations.json
+SCENE_SECONDS=$D/out/voice/durations.json node demo/record_demo.js http://localhost:8620 $D/out2
+cp -r $D/out/voice $D/out2/ && python demo/build_outputs.py $D/out2
+XI_API_KEY=... python demo/voiceover.py $D/out2                                     # lens-demo-voiced.mp4
+```
+
+Delivery uses `eleven_multilingual_v2` with settings tuned for a natural read (stability 0.38, style 0.32), and each clip is generated with the lines around it so the voice carries across scenes.
