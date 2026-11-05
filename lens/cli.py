@@ -66,6 +66,19 @@ def cmd_report(args, client, store):
     print(f"Wrote {out}")
 
 
+def cmd_audit(args, client, store):
+    from .audit import run_audit
+    audit = run_audit(client)
+    store.save_audit(client.id, audit.score, audit.to_json())
+    if audit.error:
+        sys.exit(audit.error)
+    print(f"\n{client.name} - website check of {audit.url}: AI readiness {audit.score}%")
+    for c in sorted(audit.checks, key=lambda c: ["fail", "warn", "pass", "info"].index(c.status)):
+        print(f"  [{c.status:4}] {c.area}: {c.name} - {c.detail}")
+        if c.status in ("fail", "warn") and c.fix:
+            print(f"         fix: {c.fix}")
+
+
 def cmd_import(args, client, store):
     print(f"Imported {import_csv(store, client.id, args.csv)} rows")
 
@@ -112,6 +125,7 @@ def main(argv: list[str] | None = None):
     p = add("report", cmd_report, "write the monthly PDF")
     p.add_argument("--period")
     p.add_argument("--out")
+    add("audit", cmd_audit, "free website check: what AI assistants can read on the client's site")
     p = add("import-traffic", cmd_import, "import GA4 / Search Console numbers from CSV")
     p.add_argument("csv")
 

@@ -15,11 +15,16 @@ from lens.traffic import import_csv
 from ui.common import client_picker, get_store
 from ui.theme import gap, header, month_label, rule, section
 
-PROVIDER_ROWS = [
-    ("OPENAI_API_KEY", "openai", "ChatGPT", "https://platform.openai.com/api-keys"),
-    ("GEMINI_API_KEY", "gemini", "Gemini", "https://aistudio.google.com/apikey"),
-    ("PERPLEXITY_API_KEY", "perplexity", "Perplexity", "https://www.perplexity.ai/account/api/keys"),
+PROVIDER_ROWS = [  # (env key, provider, label, where to get a key, cost note)
+    ("GEMINI_API_KEY", "gemini", "Gemini", "https://aistudio.google.com/apikey",
+     "Free. Create a key at aistudio.google.com/apikey with a Google account; no card needed. "
+     "Answers use Google Search, like Gemini does for customers."),
+    ("OPENAI_API_KEY", "openai", "ChatGPT", "https://platform.openai.com/api-keys",
+     "Paid, optional. Billed per request by OpenAI."),
+    ("PERPLEXITY_API_KEY", "perplexity", "Perplexity", "https://www.perplexity.ai/account/api/keys",
+     "Paid, optional. Billed per request by Perplexity."),
 ]
+FREE = '<span class="lx-tag" style="color:#9A5A12;border-color:#F5E1C8;background:#FDF6EC;margin-left:8px">Free</span>'
 
 CONNECTED = ('<div style="text-align:right"><span class="lx-tag" '
              'style="color:#15803D;border-color:#DCFCE7;background:#F0FDF4">Connected</span></div>')
@@ -31,14 +36,16 @@ rule()
 
 # ---- AI tools ------------------------------------------------------------------
 with st.form("keys", border=False):
-    f = section("AI tools", "API keys used to ask each tool. Leave a field blank to keep the saved key. "
-                "On a hosted deployment, set keys in the host's secrets instead.", first=True)
+    f = section("AI tools", "Lens runs free with a Gemini key. ChatGPT and Perplexity are optional paid extras. "
+                "Leave a field blank to keep the saved key; on a hosted deployment, set keys in the host's "
+                "secrets instead.", first=True)
     updates: dict[str, str] = {}
-    for key, provider, label, link in PROVIDER_ROWS:
+    for key, provider, label, link, note in PROVIDER_ROWS:
         is_set = bool(os.environ.get(key) or (key == "GEMINI_API_KEY" and os.environ.get("GOOGLE_API_KEY")))
         with f.container(border=True):
             top, status = st.columns([3, 1], vertical_alignment="center")
-            top.markdown(f"**{label}**")
+            top.html(f'<div style="font-weight:600;font-size:14px;display:flex;align-items:center">{label}'
+                     f'{FREE if provider == "gemini" else ""}</div>')
             status.html(CONNECTED if is_set else NOT_CONNECTED)
             a, b = st.columns([3, 2])
             value = a.text_input("API key", type="password", key=f"key-{key}",
@@ -46,6 +53,7 @@ with st.form("keys", border=False):
             model_key = f"LENS_{provider.upper()}_MODEL"
             model = b.text_input("Model", os.environ.get(model_key, ""), placeholder=DEFAULT_MODELS[provider],
                                  key=model_key)
+            st.caption(note)
             remove = st.checkbox("Remove saved key", key=f"rm-{key}", disabled=not is_set) if is_set else False
         if value.strip():
             updates[key] = value

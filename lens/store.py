@@ -53,6 +53,13 @@ CREATE TABLE IF NOT EXISTS traffic (
     value REAL NOT NULL,
     PRIMARY KEY (client_id, period, source, metric)
 );
+CREATE TABLE IF NOT EXISTS audits (
+    id INTEGER PRIMARY KEY,
+    client_id TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    score INTEGER,
+    data TEXT NOT NULL                 -- lens.audit.Audit as JSON
+);
 """
 
 
@@ -110,6 +117,15 @@ class Store:
             (client_id, period, source, metric, value),
         )
         self.conn.commit()
+
+    def save_audit(self, client_id: str, score: int | None, data: str) -> None:
+        self.conn.execute("INSERT INTO audits (client_id, created_at, score, data) VALUES (?, ?, ?, ?)",
+                          (client_id, now(), score, data))
+        self.conn.commit()
+
+    def last_audit(self, client_id: str) -> sqlite3.Row | None:
+        rows = self.query("SELECT * FROM audits WHERE client_id = ? ORDER BY id DESC LIMIT 1", (client_id,))
+        return rows[0] if rows else None
 
     def query(self, sql: str, params: tuple = ()) -> list[sqlite3.Row]:
         return self.conn.execute(sql, params).fetchall()

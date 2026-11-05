@@ -25,6 +25,7 @@ brand()
 
 st.navigation([
     st.Page("ui/dashboard.py", title="Dashboard", icon=":material/insights:", default=True),
+    st.Page("ui/website.py", title="Website check", icon=":material/travel_explore:"),
     st.Page("ui/clients.py", title="Clients", icon=":material/storefront:"),
     st.Page("ui/settings.py", title="Settings", icon=":material/tune:"),
 ]).run()
