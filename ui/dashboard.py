@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+
 import altair as alt
 import pandas as pd
 import streamlit as st
@@ -154,7 +156,7 @@ suggestions = suggest(client, results)
 _audit_row = store.last_audit(client.id)
 if _audit_row:  # the website check's most important failures belong in the same to-do list
     _audit = Audit.from_json(_audit_row["data"])
-    suggestions += [Suggestion(c.fix.split(";")[0].split(".")[0], f"Website check: {c.detail}", 1)
+    suggestions += [Suggestion(re.split(r"[.;](?:\s|$)", c.fix)[0], f"Website check: {c.detail}", 1)
                     for c in _audit.checks if c.status == "fail" and c.weight >= 2]
 suggestions = sorted(suggestions, key=lambda s: s.priority)
 idx = months.index(period)

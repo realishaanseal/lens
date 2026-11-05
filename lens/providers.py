@@ -208,13 +208,17 @@ class MockProvider:
 
     model = "mock"
 
-    def __init__(self, name: str, client: Client, mention_rate: float = 0.4, seed: str = ""):
+    def __init__(self, name: str, client: Client, mention_rate: float | None = None, seed: str = ""):
         self.name = name
         self.client = client
-        self.mention_rate = mention_rate
+        # demos can set LENS_MOCK_RATE to show a particular month; seeded history passes its own rate
+        self.mention_rate = mention_rate if mention_rate is not None else float(os.environ.get("LENS_MOCK_RATE", "0.4"))
         self.seed = seed
 
     def ask(self, prompt: str) -> Answer:
+        delay = float(os.environ.get("LENS_MOCK_DELAY", "0"))  # demos: pace sample answers like real ones
+        if delay:
+            time.sleep(delay)
         rng = random.Random(f"{self.name}|{prompt}|{self.seed}")
         c = self.client
         rate = self.mention_rate
