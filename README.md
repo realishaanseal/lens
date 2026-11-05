@@ -31,6 +31,22 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
+## Hosting (Streamlit Community Cloud)
+
+1. At share.streamlit.io, create an app from this repo with main file `app.py`.
+2. In **Advanced settings → Secrets**, add:
+
+   ```toml
+   LENS_PASSWORD = "choose-a-password"
+   OPENAI_API_KEY = "..."
+   GEMINI_API_KEY = "..."
+   PERPLEXITY_API_KEY = "..."
+   ```
+
+3. Deploy. With `LENS_PASSWORD` set, the app asks for it before showing anything.
+
+Streamlit Cloud's disk is temporary: results and clients added in the app reset when it restarts. Client files committed under `clients/` are kept.
+
 ## Command line
 
 Everything in the app also works from the terminal (handy for scheduling). Keys come from `.env` or the environment:
