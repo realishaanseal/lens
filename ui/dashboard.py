@@ -51,6 +51,36 @@ def run_dialog(client) -> None:
         st.rerun()
 
 
+def explain(error: str) -> str:
+    """Plain-language reason and fix for a provider error."""
+    e = error.lower()
+    if any(code in e for code in ("401", "403", "api key not valid", "invalid api key", "permission")):
+        return "The API key was rejected. Check it is copied in full and active, then update it in Settings."
+    if "429" in e or "quota" in e or "rate limit" in e or "resource_exhausted" in e:
+        return ("The tool's rate limit or free quota was reached. Wait a minute and run fewer questions, "
+                "or enable billing on the API account.")
+    if "404" in e or "not found" in e:
+        return "The model name isn't available on this account. Clear the Model field in Settings to use the default."
+    if "timed out" in e or "timeout" in e or "connection" in e:
+        return "The tool didn't respond in time. This is usually temporary; try again."
+    return "The tool returned an error. The details below can help."
+
+
+def failure_panel(title: str, expanded: bool) -> None:
+    failures = store.query(
+        "SELECT provider, error, COUNT(*) AS n FROM results WHERE client_id = ? AND period = ? "
+        "AND error IS NOT NULL GROUP BY provider, error ORDER BY n DESC LIMIT 5", (client.id, period))
+    with st.expander(title, expanded=expanded, icon=":material/error:"):
+        for i, row in enumerate(failures):
+            if i:
+                st.divider()
+            st.markdown(f"**{TOOL_NAMES.get(row['provider'], row['provider'])}** · {row['n']} "
+                        f"{'request' if row['n'] == 1 else 'requests'}")
+            st.markdown(explain(row["error"]))
+            st.code(row["error"][:500], language=None, wrap_lines=True)
+        st.page_link("ui/settings.py", label="Open Settings", icon=":material/arrow_forward:")
+
+
 # ---- No client yet -------------------------------------------------------------
 client = client_picker()
 if client is None:
@@ -117,6 +147,14 @@ report_slot.download_button("Export PDF", build_report(client, summary, suggesti
                             file_name=f"{client.id}-{period}.pdf", mime="application/pdf",
                             icon=":material/download:", width="stretch")
 
+if summary.answers == 0:
+    cta("This check didn't get any answers",
+        f"All {summary.errors} requests to the AI tools failed, so there is nothing to measure for "
+        f"{month_label(period)} yet. The reason is below. Fix it, then run the check again.")
+    gap()
+    failure_panel("What went wrong", expanded=True)
+    st.stop()
+
 # ---- Headline numbers ----------------------------------------------------------
 stats([
     {"label": "Mention rate", "value": pct(summary.mention_rate), "foot": change_text(summary.change, previous)},
@@ -129,16 +167,7 @@ stats([
 ])
 
 if summary.errors:
-    failures = store.query(
-        "SELECT provider, error, COUNT(*) AS n FROM results WHERE client_id = ? AND period = ? "
-        "AND error IS NOT NULL GROUP BY provider, error ORDER BY n DESC LIMIT 5", (client.id, period))
-    with st.expander(f"{summary.errors} requests failed and are excluded from the mention rate",
-                     icon=":material/error:"):
-        for row in failures:
-            st.markdown(f"**{TOOL_NAMES.get(row['provider'], row['provider'])}** · {row['n']} times")
-            st.code(row["error"][:400], language=None)
-        if any("401" in row["error"] or "403" in row["error"] for row in failures):
-            st.caption("This usually means an API key is missing or invalid. Check Settings.")
+    failure_panel(f"{summary.errors} requests failed and are left out of the mention rate", expanded=False)
 
 # ---- Trend and fixes -----------------------------------------------------------
 left, right = st.columns([7, 5], gap="large")
@@ -148,9 +177,10 @@ with left:
         heading("Mention rate by month")
     view = t.segmented_control("View", ["Overall", "By tool"], default="Overall",
                                label_visibility="collapsed") or "Overall"
-    df = pd.DataFrame(trend(store, client.id)).rename(columns={**TOOL_NAMES, "overall": "All tools"})
+    df = pd.DataFrame(trend(store, client.id), columns=["period", "overall", *TOOL_NAMES])
+    df = df.rename(columns={**TOOL_NAMES, "overall": "All tools"})
     df["month"] = df["period"].map(lambda p: month_label(p)[:3] + " " + p[2:4])
-    cols = ["All tools"] if view == "Overall" else [c for c in TOOL_NAMES.values() if c in df.columns]
+    cols = ["All tools"] if view == "Overall" else [c for c in TOOL_NAMES.values() if df[c].notna().any()]
     long = df.melt(id_vars=["period", "month"], value_vars=cols, var_name="Tool", value_name="rate").dropna()
     order = list(df["month"])
     enc = dict(
@@ -175,8 +205,10 @@ with left:
 with right:
     heading("Suggested fixes", f"{len(suggestions)} open" if suggestions else "")
     if suggestions:
-        with st.container(height=300, border=False):
-            fixes([(s.title, s.detail, s.priority) for s in suggestions])
+        fixes([(s.title, s.detail, s.priority) for s in suggestions[:4]])
+        if len(suggestions) > 4:
+            with st.expander(f"{len(suggestions) - 4} more"):
+                fixes([(s.title, s.detail, s.priority) for s in suggestions[4:]])
     else:
         st.caption("Nothing needs attention this month.")
 

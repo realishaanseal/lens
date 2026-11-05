@@ -22,8 +22,8 @@ PROVIDER_ROWS = [
 ]
 
 CONNECTED = ('<div style="text-align:right"><span class="lx-tag" '
-             'style="color:#15803D;border-color:#BBF7D0;background:#F0FDF4">Connected</span></div>')
-NOT_CONNECTED = '<div style="text-align:right"><span class="lx-tag">Not connected</span></div>'
+             'style="color:#15803D;border-color:#DCFCE7;background:#F0FDF4">Connected</span></div>')
+NOT_CONNECTED = '<div style="text-align:right"><span class="lx-tag" style="color:#71717A">Not connected</span></div>'
 
 client = client_picker()
 header("Settings", "Connect AI tools and add website traffic numbers.")
