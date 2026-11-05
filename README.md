@@ -18,13 +18,21 @@ Prompt library → Scheduler → LLM APIs → Parser → Reports
   language)                    Perplexity) detection)
 ```
 
+## Free to run
+
+Lens costs nothing to run:
+
+- **AI checks with Gemini's free tier.** Create a key at [aistudio.google.com/apikey](https://aistudio.google.com/apikey) with any Google account; no card is needed. Answers use Google Search grounding, the way Gemini answers customers. Lens paces requests to stay inside the free per-minute limit (a 25-question check takes about 3 minutes), waits as long as Google asks when it is busy, and stops cleanly if the day's free quota runs out. Set `LENS_GEMINI_MIN_INTERVAL=0` if you move to a paid key.
+- **Website check, no AI at all.** Lens reads the client's site the way AI crawlers do and scores how AI-ready it is: whether robots.txt lets GPTBot, PerplexityBot, Google-Extended and others in, schema.org business, Physician and FAQ markup, the city and name in titles, a page per service, a sitemap and llms.txt, and phone numbers that match the listings. Each failing check comes with the fix, and the important ones join the dashboard's suggested fixes.
+- **ChatGPT and Perplexity are optional.** Add their keys only if you want those tools in the comparison; both bill per request.
+
 ## Quick start
 
 **Windows:** double-click `start.bat`.  **Mac / Linux:** run `./start.sh`.
 
 The first run installs everything (needs Python 3.10+); after that it opens Lens in your browser.
 
-1. **Settings**: paste your OpenAI, Gemini and/or Perplexity API keys. They are saved to a local `.env` file.
+1. **Settings**: paste a free Gemini key (and, optionally, paid OpenAI or Perplexity keys). They are saved to a local `.env` file.
 2. **Clients**: add a business: name, city, other spellings, doctors, services, competitors.
 3. **Dashboard**: press **Run check**. Lens asks every question on each AI tool and shows the mention rate, who AI recommends instead, what to fix, and every answer. Download the monthly PDF from the sidebar.
 
@@ -59,14 +67,15 @@ Streamlit Cloud's disk is temporary: results and clients added in the app reset 
 Everything in the app also works from the terminal (handy for scheduling). Keys come from `.env` or the environment:
 
 ```bash
-export OPENAI_API_KEY=...       # ChatGPT (Responses API with web search)
-export GEMINI_API_KEY=...       # Gemini (with Google Search grounding)
-export PERPLEXITY_API_KEY=...   # Perplexity (sonar)
+export GEMINI_API_KEY=...       # Gemini, free tier (with Google Search grounding)
+export OPENAI_API_KEY=...       # optional, paid: ChatGPT (Responses API with web search)
+export PERPLEXITY_API_KEY=...   # optional, paid: Perplexity (sonar)
 
 python -m lens prompts --client clients/meridian-hospital.yaml          # see the questions
 python -m lens run --client clients/meridian-hospital.yaml --limit 3    # cheap test run
 python -m lens run --client clients/meridian-hospital.yaml              # full monthly check
 python -m lens report --client clients/meridian-hospital.yaml           # writes reports/<id>-<month>.pdf
+python -m lens audit --client clients/meridian-hospital.yaml            # free website check
 ```
 
 `run` uses every provider with a key unless you pass `--providers openai,gemini`. Models can be changed with `LENS_OPENAI_MODEL`, `LENS_GEMINI_MODEL` and `LENS_PERPLEXITY_MODEL`. Results go to `data/lens.db` (override with `LENS_DB` or `--db`).
@@ -134,6 +143,7 @@ lens/
   metrics.py               mention rate, trends, competitor counts
   suggest.py               fix suggestions
   report.py                monthly PDF
+  audit.py                 free website check (AI crawler access, schema, content, consistency)
   traffic.py               GA4 / Search Console CSV import
   settings.py              API keys in .env
   cli.py                   python -m lens ...

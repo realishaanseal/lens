@@ -1,4 +1,4 @@
-"""Clients for the AI tools we check: ChatGPT (OpenAI), Gemini and Perplexity.
+"""Clients for the AI tools we check: Gemini (free tier), ChatGPT (OpenAI) and Perplexity.
 
 Each provider sends the question exactly as a customer would type it, with web
 search switched on where the API supports it, because that is how these tools
@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import os
 import random
+import threading
 import time
 from dataclasses import dataclass, field
 from typing import Protocol
@@ -17,7 +18,8 @@ import requests
 
 from .config import Client
 
-PROVIDERS = ("openai", "gemini", "perplexity")
+PROVIDERS = ("gemini", "openai", "perplexity")  # Gemini first: it has a free tier
+FREE_PROVIDERS = {"gemini"}
 DEFAULT_MODELS = {"openai": "gpt-4.1-mini", "gemini": "gemini-2.5-flash", "perplexity": "sonar"}
 TIMEOUT = 90
 
@@ -40,9 +42,28 @@ class Provider(Protocol):
     def ask(self, prompt: str) -> Answer: ...
 
 
+def _retry_delay(resp: requests.Response) -> float | None:
+    """Seconds the API asked us to wait, from Retry-After or Google's RetryInfo."""
+    if resp.headers.get("retry-after", "").isdigit():
+        return float(resp.headers["retry-after"])
+    try:
+        for detail in resp.json().get("error", {}).get("details", []):
+            delay = detail.get("retryDelay", "")
+            if delay.endswith("s"):
+                return float(delay[:-1])
+    except ValueError:
+        pass
+    return None
+
+
+class QuotaExhausted(ProviderError):
+    """The account's daily (free) quota is used up; retrying today won't help."""
+
+
 def _post(url: str, *, headers: dict, payload: dict, params: dict | None = None, retries: int = 3) -> dict:
-    """POST with retry on rate limits and server errors."""
+    """POST with retry on rate limits and server errors, waiting as long as the API asks."""
     for attempt in range(retries):
+        wait = 2 ** (attempt + 1)
         try:
             resp = requests.post(url, headers=headers, json=payload, params=params, timeout=TIMEOUT)
         except requests.RequestException as exc:
@@ -51,9 +72,13 @@ def _post(url: str, *, headers: dict, payload: dict, params: dict | None = None,
         else:
             if resp.status_code < 400:
                 return resp.json()
+            body = resp.text[:300]
+            if resp.status_code == 429 and ("PerDay" in resp.text or "per day" in resp.text.lower()):
+                raise QuotaExhausted(f"HTTP 429: daily quota used up. {body}")
             if resp.status_code != 429 and resp.status_code < 500 or attempt == retries - 1:
-                raise ProviderError(f"HTTP {resp.status_code}: {resp.text[:300]}")
-        time.sleep(2 ** (attempt + 1))
+                raise ProviderError(f"HTTP {resp.status_code}: {body}")
+            wait = min(_retry_delay(resp) or wait, 65)
+        time.sleep(wait)
     raise ProviderError("unreachable")
 
 
@@ -99,18 +124,41 @@ def parse_openai(data: dict, model: str) -> Answer:
 
 
 class GeminiProvider:
+    """Gemini with Google Search grounding. Works on Google AI Studio's free tier (no card needed).
+
+    Free-tier keys allow only a few requests a minute, so calls are spaced out across all threads
+    (LENS_GEMINI_MIN_INTERVAL seconds, default 6.5, about 9 a minute). Set it to 0 on a paid key."""
     name = "gemini"
+    _lock = threading.Lock()
+    _last = 0.0
 
     def __init__(self, model: str | None = None):
         self.key = _env_key("GEMINI_API_KEY", "GOOGLE_API_KEY")
         self.model = model or os.environ.get("LENS_GEMINI_MODEL", DEFAULT_MODELS["gemini"])
+        self.min_interval = float(os.environ.get("LENS_GEMINI_MIN_INTERVAL", "6.5"))
+        self.exhausted: QuotaExhausted | None = None   # once the daily quota is gone, stop calling
+
+    def _pace(self) -> None:
+        with GeminiProvider._lock:
+            gap = GeminiProvider._last + self.min_interval - time.monotonic()
+            if gap > 0:
+                time.sleep(gap)
+            GeminiProvider._last = time.monotonic()
 
     def ask(self, prompt: str) -> Answer:
-        data = _post(
-            f"https://generativelanguage.googleapis.com/v1beta/models/{self.model}:generateContent",
-            headers={"x-goog-api-key": self.key},
-            payload={"contents": [{"parts": [{"text": prompt}]}], "tools": [{"google_search": {}}]},
-        )
+        if self.exhausted:
+            raise self.exhausted
+        self._pace()
+        try:
+            data = _post(
+                f"https://generativelanguage.googleapis.com/v1beta/models/{self.model}:generateContent",
+                headers={"x-goog-api-key": self.key},
+                payload={"contents": [{"parts": [{"text": prompt}]}], "tools": [{"google_search": {}}]},
+                retries=4,
+            )
+        except QuotaExhausted as exc:
+            self.exhausted = exc
+            raise
         return parse_gemini(data, self.model)
 
 

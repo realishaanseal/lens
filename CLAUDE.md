@@ -14,3 +14,6 @@
 - Brand: Lens's logo is in `brand/masters`, built by `brand/tools` on the Varaxis brand system (ink #0B1118,
   Lens amber #C9761A, Montserrat wordmark, "BY VARAXIS" endorsement). Never redraw it by hand: change
   `brand/tools/lens_geometry.py`, regenerate, and copy the app files into `ui/assets` (see brand/README.md).
+- Cost: Lens must stay usable for free. Gemini's free tier (AI Studio key, no card) is the default AI tool and is
+  paced in `GeminiProvider`; ChatGPT and Perplexity are optional paid extras. The website check (`lens/audit.py`)
+  needs no API at all.

@@ -12,7 +12,9 @@ from lens.providers import PROVIDERS, MockProvider, ProviderError, available_pro
 from lens.report import build_report
 from lens.runner import run_check, seed_demo
 from lens.store import current_period
-from lens.suggest import suggest
+from lens.audit import Audit
+from lens.suggest import Suggestion, suggest
+from ui.status_copy import StatusCopy
 from ui.common import LANG_NAMES, TOOL_NAMES, client_picker, get_store, pct
 from ui.theme import (INK, LINE, MUTED, SERIES, change_text, cta, fixes, gap, heading, identity, month_label, rows,
                       rule, stats)
@@ -37,16 +39,21 @@ def run_dialog(client) -> None:
     limit = a.number_input("Questions per tool", 1, total, total)
     run_period = b.text_input("Month", current_period(), help="Format YYYY-MM")
     calls = len(chosen or []) * int(limit)
-    st.caption(f"{calls} AI requests" + ("" if use_mock else " · usually a few minutes"))
+    free_note = ""
+    if not use_mock and chosen and "gemini" in chosen:
+        free_note = (f" · Gemini's free tier is paced to stay under its limit, about "
+                     f"{max(1, round(int(limit) * 6.5 / 60))} min")
+    st.caption(f"{calls} AI requests" + (free_note or ("" if use_mock else " · usually a few minutes")))
     if st.button("Start check", type="primary", width="stretch", disabled=not chosen or (not keyed and not use_mock)):
         try:
             providers = [MockProvider(n, client) if use_mock else get_provider(n, client) for n in chosen]
         except (ValueError, ProviderError) as exc:
             st.error(str(exc))
             return
-        bar = st.progress(0.0, "Starting")
+        copy = StatusCopy(client)
+        bar = st.progress(0.0, copy.opener())
         run_check(client, providers, store, period=run_period, limit=int(limit),
-                  progress=lambda done, total, label: bar.progress(done / total, label[:56]))
+                  progress=lambda done, total, label: bar.progress(done / total, copy.line(done, total, label)))
         st.session_state["period"] = run_period
         st.rerun()
 
@@ -56,6 +63,9 @@ def explain(error: str) -> str:
     e = error.lower()
     if any(code in e for code in ("401", "403", "api key not valid", "invalid api key", "permission")):
         return "The API key was rejected. Check it is copied in full and active, then update it in Settings."
+    if "quotaexhausted" in e or "daily quota" in e or "perday" in e:
+        return ("The free daily limit for this tool is used up. It resets at midnight Pacific time "
+                "(early afternoon in India). Run the rest of the check tomorrow, or with fewer questions.")
     if "429" in e or "quota" in e or "rate limit" in e or "resource_exhausted" in e:
         return ("The tool's rate limit or free quota was reached. Wait a minute and run fewer questions, "
                 "or enable billing on the API account.")
@@ -129,7 +139,7 @@ if not period:
         run_dialog(client)
     if c2.button("Explore sample data", width="stretch",
                  help="Five months of generated answers so you can see a full dashboard."):
-        with st.spinner("Generating sample months"):
+        with st.spinner("Building five months of sample answers…"):
             seed_demo(client, store)
         st.rerun()
     gap()
@@ -140,7 +150,13 @@ if not period:
 
 summary = summarize(store, client.id, period)
 results = latest_results(store, client.id, period)
-suggestions = sorted(suggest(client, results), key=lambda s: s.priority)
+suggestions = suggest(client, results)
+_audit_row = store.last_audit(client.id)
+if _audit_row:  # the website check's most important failures belong in the same to-do list
+    _audit = Audit.from_json(_audit_row["data"])
+    suggestions += [Suggestion(c.fix.split(";")[0].split(".")[0], f"Website check: {c.detail}", 1)
+                    for c in _audit.checks if c.status == "fail" and c.weight >= 2]
+suggestions = sorted(suggestions, key=lambda s: s.priority)
 idx = months.index(period)
 previous = month_label(months[idx - 1]).split()[0] if idx > 0 else "last month"
 report_slot.download_button("Export PDF", build_report(client, summary, suggestions, store),
