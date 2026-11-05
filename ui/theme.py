@@ -99,6 +99,83 @@ h1, h2, h3, h4 { letter-spacing:-0.015em; font-weight:600 !important; }
 .lx-cta { border:1px solid #E4E4E7; border-radius:10px; padding:28px 28px 8px; }
 .lx-cta h3 { font-size:16px; margin:0 0 6px; padding:0; }
 .lx-cta p { color:#71717A; font-size:13.5px; margin:0; max-width:620px; line-height:1.55; }
+/* Loading: thin progress line while the app works, shown only if work takes over 250ms */
+.stApp[data-test-script-state="running"]::before { content:""; position:fixed; top:0; left:0; height:2px;
+  width:32%; background:#18181B; z-index:1000020; opacity:0;
+  animation: lxSlide 1.1s cubic-bezier(.45,0,.25,1) .25s infinite, lxIn .2s ease .25s forwards; }
+@keyframes lxSlide { 0% { transform:translateX(-100%); } 100% { transform:translateX(320%); } }
+@keyframes lxIn { to { opacity:1; } }
+
+/* ---- Motion system: expo-out easing, staggered reveals, blur-to-sharp "focus pulls" ---- */
+:root { --e-out:cubic-bezier(.16,1,.3,1); --e-io:cubic-bezier(.65,0,.35,1); }
+@keyframes lxRise { from { opacity:0; transform:translateY(10px); filter:blur(6px); } to { opacity:1; transform:none; filter:none; } }
+@keyframes lxFocusIn { from { opacity:0; filter:blur(12px); transform:translateY(4px) scale(.98); } to { opacity:1; filter:none; transform:none; } }
+@keyframes lxGrow { from { transform:scaleX(0); } to { transform:scaleX(1); } }
+@keyframes lxPop { 0% { opacity:0; transform:scale(.6) rotate(-8deg); filter:blur(8px); }
+  60% { opacity:1; filter:none; } 100% { opacity:1; transform:none; } }
+@keyframes lxSpin { to { transform:rotate(360deg); } }
+@keyframes lxIris { 0%, 100% { transform:scale(1); filter:none; } 45% { transform:scale(.78); filter:blur(1px); } }
+@keyframes lxTrack { 0% { transform:translateX(-100%) scaleX(.4); } 50% { transform:translateX(60%) scaleX(.9); }
+  100% { transform:translateX(260%) scaleX(.4); } }
+
+.lx-id { animation: lxFocusIn .9s var(--e-out) both; }
+.lx-stat { animation: lxRise .8s var(--e-out) both; }
+.lx-stat:nth-child(2) { animation-delay:.07s; } .lx-stat:nth-child(3) { animation-delay:.14s; }
+.lx-stat:nth-child(4) { animation-delay:.21s; }
+.lx-h, .lx-cta, .lx-empty { animation: lxRise .8s var(--e-out) .1s both; }
+.lx-row, .lx-fix, .lx-crow { animation: lxRise .7s var(--e-out) both; }
+.lx-row:nth-child(2), .lx-fix:nth-child(2) { animation-delay:.06s; } .lx-row:nth-child(3), .lx-fix:nth-child(3) { animation-delay:.12s; }
+.lx-row:nth-child(4), .lx-fix:nth-child(4) { animation-delay:.18s; } .lx-row:nth-child(5), .lx-fix:nth-child(5) { animation-delay:.24s; }
+.lx-row .t i { transform-origin:left center; animation: lxGrow 1.3s var(--e-out) .25s both; }
+[data-testid="stVegaLiteChart"], [data-testid="stArrowVegaLiteChart"] { animation: lxRise 1s var(--e-out) .15s both; }
+.stButton button:active, .stDownloadButton button:active, .stFormSubmitButton button:active { transform:scale(.98); }
+.stButton button, .stDownloadButton button, .stFormSubmitButton button {
+  transition: background-color .2s var(--e-out), border-color .2s var(--e-out), transform .15s var(--e-out), box-shadow .2s; }
+.stButton button[kind="primary"]:hover, .stFormSubmitButton button[kind="primaryFormSubmit"]:hover {
+  box-shadow:0 6px 20px -8px rgba(24,24,27,.55); }
+
+/* Numbers count up */
+@property --n { syntax:"\\3c integer\\3e "; inherits:false; initial-value:0; }
+@keyframes lxCount { from { --n:0; } to { --n:var(--to); } }
+.lx-count { --n:var(--to); counter-reset:n var(--n); animation: lxCount 1.4s var(--e-out) .15s both; }
+.lx-count::before { content:counter(n); }
+
+/* Loading screen */
+.lx-boot { position:fixed; inset:0; z-index:1000010; background:#FFFFFF; display:grid; place-items:center;
+  pointer-events:none; animation: lxBootOut .9s var(--e-out) forwards; }
+.stApp[data-test-script-state="running"] .lx-boot { animation:none; opacity:1; visibility:visible; }
+[data-stale="true"] .lx-boot { display:none !important; }
+@keyframes lxBootOut { 0%, 25% { opacity:1; visibility:visible; transform:none; filter:none; }
+  100% { opacity:0; visibility:hidden; transform:scale(1.04); filter:blur(10px); } }
+.lx-boot-inner { display:flex; flex-direction:column; align-items:center; }
+.lx-lens { position:relative; width:84px; height:84px; animation: lxPop 1s var(--e-out) both; }
+.lx-ring { position:absolute; inset:0; border-radius:50%; border:1.5px solid #EDEDEF; }
+.lx-ring.spin { border-color:transparent; border-top-color:#18181B; animation: lxSpin 1.4s var(--e-io) infinite; }
+.lx-ring.spin.two { inset:7px; border-top-color:#A1A1AA; animation-duration:2.1s; animation-direction:reverse; }
+.lx-mark { position:absolute; inset:22px; border-radius:11px; background:#18181B; display:grid; place-items:center;
+  box-shadow:0 10px 30px -12px rgba(24,24,27,.6); }
+.lx-glass { position:relative; width:17px; height:17px; margin:-3px 0 0 -3px; border:3px solid #FFFFFF;
+  border-radius:50%; animation: lxIris 2.2s var(--e-io) .6s infinite; }
+.lx-glass::after { content:""; position:absolute; width:7px; height:3px; background:#FFFFFF; border-radius:2px;
+  right:-7px; bottom:-4px; transform:rotate(45deg); }
+.lx-word { margin-top:26px; font-size:17px; font-weight:600; letter-spacing:-.02em; color:#18181B; white-space:pre; }
+.lx-word span { display:inline-block; animation: lxFocusIn .9s var(--e-out) both;
+  animation-delay:calc(.35s + var(--i) * .035s); }
+.lx-bar { position:relative; width:148px; height:2px; margin-top:20px; border-radius:2px; background:#F4F4F5;
+  overflow:hidden; animation: lxRise .8s var(--e-out) .6s both; }
+.lx-bar i { position:absolute; inset:0; width:40%; border-radius:2px; background:#18181B;
+  animation: lxTrack 1.5s var(--e-io) infinite; }
+.lx-steps { position:relative; height:18px; width:260px; margin-top:16px; text-align:center; font-size:13px; color:#71717A; }
+.lx-steps span { position:absolute; inset:0; opacity:0; animation: lxStep 3.6s var(--e-io) .8s infinite; }
+.lx-steps span:nth-child(2) { animation-delay:2s; } .lx-steps span:nth-child(3) { animation-delay:3.2s; }
+@keyframes lxStep { 0% { opacity:0; transform:translateY(6px); filter:blur(4px); } 10%, 28% { opacity:1; transform:none; filter:none; }
+  36%, 100% { opacity:0; transform:translateY(-6px); filter:blur(4px); } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration:.001s !important; animation-iteration-count:1 !important;
+    animation-delay:0s !important; transition-duration:.001s !important; }
+  .lx-steps span:first-child { opacity:1; }
+}
 </style>
 """
 
@@ -144,10 +221,21 @@ def change_text(change: float | None, previous: str = "last month") -> str:
 
 
 def stats(cards: list[dict]) -> None:
-    """cards: {label, value, foot (trusted html), text? (smaller value for names)}."""
+    """cards: {label, value, foot (trusted html), text? (smaller value for names)}.
+
+    Whole-number values such as "46%" or "19" count up from zero when they appear.
+    """
+    def value_html(value) -> str:
+        text = str(value)
+        digits = text.rstrip("%")
+        if digits.isdigit() and int(digits) < 100000:
+            return f'<span class="lx-count" style="--to:{int(digits)}" aria-hidden="true"></span>{text[len(digits):]}'
+        return escape(text)
+
     cells = "".join(
         f'<div class="lx-stat"><div class="k">{escape(c["label"])}</div>'
-        f'<div class="v{" text" if c.get("text") else ""}" title="{escape(str(c["value"]))}">{escape(str(c["value"]))}</div>'
+        f'<div class="v{" text" if c.get("text") else ""}" title="{escape(str(c["value"]))}" '
+        f'aria-label="{escape(str(c["value"]))}">{value_html(c["value"])}</div>'
         f'<div class="f">{c.get("foot", "")}</div></div>' for c in cards)
     st.html(f'<div class="lx-stats">{cells}</div>')
 
@@ -213,3 +301,19 @@ def section(title: str, description: str, first: bool = False):
 
 def cta(title: str, body: str) -> None:
     st.html(f'<div class="lx-cta"><h3>{escape(title)}</h3><p>{escape(body)}</p></div>')
+
+
+_LOADER = """
+<div class="lx-boot" role="status" aria-live="polite" aria-label="Loading"><div class="lx-boot-inner">
+  <div class="lx-lens"><div class="lx-ring"></div><div class="lx-ring spin"></div><div class="lx-ring spin two"></div>
+    <div class="lx-mark"><div class="lx-glass"></div></div></div>
+  <div class="lx-word" aria-hidden="true"><span style="--i:0">V</span><span style="--i:1">a</span><span style="--i:2">r</span><span style="--i:3">a</span><span style="--i:4">x</span><span style="--i:5">i</span><span style="--i:6">s</span><span style="--i:7"> </span><span style="--i:8">L</span><span style="--i:9">e</span><span style="--i:10">n</span><span style="--i:11">s</span></div>
+  <div class="lx-bar"><i></i></div>
+  <div class="lx-steps"><span>Loading your clients</span><span>Reading the latest answers</span><span>Preparing your dashboard</span></div>
+</div></div>
+"""
+
+
+def loading_screen() -> None:
+    """Full-screen loader, shown while the current run builds the page, then faded out."""
+    st.html(_LOADER)

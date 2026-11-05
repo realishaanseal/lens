@@ -6,7 +6,7 @@ import streamlit as st
 
 from lens.settings import load_env
 from ui.auth import require_login
-from ui.theme import brand, inject
+from ui.theme import brand, inject, loading_screen
 
 load_env()
 try:  # Streamlit Cloud: top-level secrets (API keys, models) act like environment variables
@@ -18,6 +18,9 @@ except Exception:  # no secrets configured
 st.set_page_config(page_title="Varaxis Lens", page_icon="ui/assets/icon.svg", layout="wide", initial_sidebar_state="expanded")
 inject()
 require_login()
+if not st.session_state.get("_booted"):  # first view after opening or signing in
+    st.session_state["_booted"] = True
+    loading_screen()
 brand()
 
 st.navigation([
