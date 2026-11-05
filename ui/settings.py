@@ -13,11 +13,12 @@ from lens.settings import KEYS, save_env
 from lens.store import current_period
 from lens.traffic import import_csv
 from ui.common import client_picker, get_store
+from ui.theme import header, heading as section
 
-st.title("Settings")
+header("Settings", "AI tool connections and website traffic.")
 
 # ---- API keys ------------------------------------------------------------------
-st.subheader("AI tools")
+section("AI tools", "Keys stay on this computer")
 st.caption("Keys are saved to a .env file on this computer only. Leave a key blank to keep it; "
            "tick Remove to delete it.")
 
@@ -29,8 +30,8 @@ with st.form("keys"):
         ("PERPLEXITY_API_KEY", "perplexity", "https://www.perplexity.ai/account/api/keys"),
     ]:
         is_set = bool(os.environ.get(key) or (key == "GEMINI_API_KEY" and os.environ.get("GOOGLE_API_KEY")))
-        a, b, d = st.columns([3, 2, 1])
-        value = a.text_input(f"{KEYS[key]}{' ✅' if is_set else ''}", type="password",
+        a, b, d = st.columns([3, 2, 1], vertical_alignment="center")
+        value = a.text_input(f"{KEYS[key]}{' · Connected' if is_set else ''}", type="password",
                              placeholder="saved" if is_set else "not set", help=f"Get one at {link}")
         model_key = f"LENS_{provider.upper()}_MODEL"
         model = b.text_input("Model", os.environ.get(model_key, ""), placeholder=DEFAULT_MODELS[provider],
@@ -47,8 +48,7 @@ with st.form("keys"):
         st.rerun()
 
 # ---- Traffic -------------------------------------------------------------------
-st.divider()
-st.subheader("Website traffic")
+section("Website traffic", "GA4 + Search Console")
 client = client_picker()
 if client is None:
     st.info("Add a client first.")

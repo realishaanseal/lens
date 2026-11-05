@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import altair as alt
 import pandas as pd
 import streamlit as st
 
@@ -13,151 +14,189 @@ from lens.runner import run_check, seed_demo
 from lens.store import current_period
 from lens.suggest import suggest
 from ui.common import LANG_NAMES, TOOL_NAMES, client_picker, get_store, pct
+from ui.theme import INK, LINE, MUTED, SERIES, change_text, empty, fixes, gap, header, heading, month_label, rows, stats
 
 store = get_store()
 
-# ---- Sidebar: client, month, run a check --------------------------------------
+# ---- No client yet -------------------------------------------------------------
 client = client_picker()
 if client is None:
-    st.info("No clients yet. Add one on the **Clients** page.")
-    st.page_link("ui/clients.py", label="Add a client", icon="➕")
+    header("Welcome to Varaxis Lens", "See whether ChatGPT, Gemini and Perplexity recommend your business.")
+    empty("Add your first business",
+          "Lens builds the questions customers actually ask from the business name, city and services.",
+          ["Add the business on the Clients page.", "Connect at least one AI tool in Settings.",
+           "Run a check from the dashboard."])
+    st.page_link("ui/clients.py", label="Add a client", icon=":material/arrow_forward:")
     st.stop()
 
+# ---- Sidebar -------------------------------------------------------------------
 with st.sidebar:
-
     months = periods(store, client.id)
-    period = st.selectbox("Month", list(reversed(months))) if months else None
+    period = st.selectbox("Month", list(reversed(months)), format_func=month_label) if months else None
 
     st.divider()
-    st.subheader("Run a check")
     keyed = available_providers()
-    use_mock = st.toggle("Offline mock answers", value=not keyed,
-                         help="Use generated answers instead of real API calls. Handy for demos.")
-    chosen = st.multiselect("AI tools", PROVIDERS, default=list(PROVIDERS) if use_mock else keyed,
-                            format_func=TOOL_NAMES.get)
-    limit = st.number_input("Questions", 1, client.max_prompts, client.max_prompts)
-    run_period = st.text_input("File under month", current_period())
-    if st.button("Run check", type="primary", disabled=not chosen):
-        try:
-            providers = [MockProvider(n, client) if use_mock else get_provider(n, client) for n in chosen]
-        except (ValueError, ProviderError) as exc:
-            st.error(str(exc))
-        else:
-            bar = st.progress(0.0, "Starting…")
-            run_check(client, providers, store, period=run_period, limit=int(limit),
-                      progress=lambda done, total, label: bar.progress(done / total, label[:60]))
+    with st.expander("Run a check", expanded=not months, icon=":material/play_circle:"):
+        use_mock = st.toggle("Use sample answers", value=not keyed,
+                             help="Generated answers instead of real API calls. For demos and testing.")
+        chosen = st.multiselect("AI tools", PROVIDERS, default=list(PROVIDERS) if use_mock else keyed,
+                                format_func=TOOL_NAMES.get, placeholder="Choose tools")
+        limit = st.number_input("Questions", 1, client.max_prompts, client.max_prompts)
+        run_period = st.text_input("Month", current_period(), help="Format YYYY-MM")
+        if st.button("Run check", type="primary", disabled=not chosen, width="stretch"):
+            try:
+                providers = [MockProvider(n, client) if use_mock else get_provider(n, client) for n in chosen]
+            except (ValueError, ProviderError) as exc:
+                st.error(str(exc))
+            else:
+                bar = st.progress(0.0, "Starting")
+                run_check(client, providers, store, period=run_period, limit=int(limit),
+                          progress=lambda done, total, label: bar.progress(done / total, label[:48]))
+                st.rerun()
+        if not months and st.button("Load sample data", width="stretch",
+                                    help="Five months of sample answers so you can explore the dashboard."):
+            seed_demo(client, store)
             st.rerun()
-    if not months and st.button("Load demo data", help="Five months of mock answers, to look around"):
-        seed_demo(client, store)
-        st.rerun()
 
-st.title(client.name)
-st.caption(f"{client.category.title()} · {client.city}" + (f" · {client.area}" if client.area else ""))
+location = ", ".join(x for x in [client.city, client.area] if x)
+header(client.name, f"{client.category.title()} · {location}", month_label(period) if period else "")
 
 if not period:
-    if not available_providers():
-        st.info("No checks yet. Add your API keys on the **Settings** page to run real checks, "
-                "or switch on mock answers in the sidebar to try it out.")
-    else:
-        st.info("No checks yet. Press **Run check** in the sidebar.")
-    with st.expander("Questions that will be asked"):
-        st.dataframe(pd.DataFrame([{"Language": LANG_NAMES.get(p.language, p.language), "Question": p.text}
-                                   for p in build_prompts(client)]), hide_index=True, width="stretch")
+    prompts = build_prompts(client)
+    empty("No checks yet",
+          f"Lens will ask each AI tool {min(len(prompts), client.max_prompts)} questions and record whether "
+          f"{client.name} is recommended.",
+          ["Connect an AI tool in Settings, or turn on sample answers.",
+           "Open Run a check in the sidebar and press Run check.",
+           "Review the mention rate, competitors and suggested fixes here."])
+    gap()
+    heading("Questions", f"{len(prompts)} total")
+    st.dataframe(pd.DataFrame([{"Language": LANG_NAMES.get(p.language, p.language), "Question": p.text}
+                               for p in prompts]), hide_index=True, width="stretch")
     st.stop()
 
 summary = summarize(store, client.id, period)
 results = latest_results(store, client.id, period)
-suggestions = suggest(client, results)
+suggestions = sorted(suggest(client, results), key=lambda s: s.priority)
+idx = months.index(period)
+previous = month_label(months[idx - 1]).split()[0] if idx > 0 else "last month"
 
-# ---- KPI row -------------------------------------------------------------------
-c1, c2, c3, c4 = st.columns(4)
-c1.metric("Mention rate", pct(summary.mention_rate),
-          None if summary.change is None else f"{summary.change * 100:+.0f} pts")
-c2.metric("Questions tested", summary.prompts_tested, help=f"{summary.answers} AI answers")
-c3.metric("Top competitor", summary.top_competitor or "–",
-          help="Business AI names most often in this month's answers")
-c4.metric("AI visits", "–" if summary.ai_visits is None else f"{summary.ai_visits:.0f}",
-          help="GA4 'AI Assistant' users this month (import with `python -m lens import-traffic`)")
+# ---- Headline numbers ----------------------------------------------------------
+stats([
+    {"label": "Mention rate", "value": pct(summary.mention_rate), "foot": change_text(summary.change, previous)},
+    {"label": "Questions tested", "value": summary.prompts_tested,
+     "foot": f"{summary.answers} answers from {len(summary.by_provider)} AI tools"},
+    {"label": "Top competitor", "value": summary.top_competitor or "None", "text": True,
+     "foot": (f"In {pct(summary.top_competitors[0][2])} of answers" if summary.top_competitors else "No competitors named")},
+    {"label": "Visits from AI", "value": "–" if summary.ai_visits is None else f"{summary.ai_visits:,.0f}",
+     "foot": "GA4 AI Assistant users" if summary.ai_visits is not None else "Add GA4 numbers in Settings"},
+])
+
 if summary.errors:
     failures = store.query(
         "SELECT provider, error, COUNT(*) AS n FROM results WHERE client_id = ? AND period = ? "
         "AND error IS NOT NULL GROUP BY provider, error ORDER BY n DESC LIMIT 5", (client.id, period))
-    with st.expander(f"⚠️ {summary.errors} AI calls failed this month and are left out of the mention rate"):
+    with st.expander(f"{summary.errors} requests failed and are excluded from the mention rate",
+                     icon=":material/error:"):
         for row in failures:
-            st.markdown(f"**{TOOL_NAMES.get(row['provider'], row['provider'])}** ({row['n']}×)")
+            st.markdown(f"**{TOOL_NAMES.get(row['provider'], row['provider'])}** · {row['n']} times")
             st.code(row["error"][:400], language=None)
         if any("401" in row["error"] or "403" in row["error"] for row in failures):
-            st.info("Looks like an API key problem. Check your keys on the **Settings** page.")
+            st.caption("This usually means an API key is missing or invalid. Check Settings.")
 
-# ---- Trend + suggestions -----------------------------------------------------
-left, right = st.columns([3, 2])
+# ---- Trend and fixes -----------------------------------------------------------
+left, right = st.columns([7, 5], gap="large")
 with left:
-    st.subheader("Mentions in AI answers by month")
-    df = pd.DataFrame(trend(store, client.id)).set_index("period")
-    df = df.rename(columns={**TOOL_NAMES, "overall": "All tools"}) * 100
-    view = st.radio("Show", ["All tools", "By AI tool"], horizontal=True, label_visibility="collapsed")
-    if view == "All tools":
-        st.bar_chart(df[["All tools"]], y_label="% of answers naming you", color="#E84E1B")
+    h, t = st.columns([3, 2], vertical_alignment="bottom")
+    with h:
+        heading("Mention rate by month")
+    view = t.segmented_control("View", ["Overall", "By tool"], default="Overall",
+                               label_visibility="collapsed") or "Overall"
+    df = pd.DataFrame(trend(store, client.id)).rename(columns={**TOOL_NAMES, "overall": "All tools"})
+    df["month"] = df["period"].map(lambda p: month_label(p)[:3] + " " + p[2:4])
+    cols = ["All tools"] if view == "Overall" else [c for c in TOOL_NAMES.values() if c in df.columns]
+    long = df.melt(id_vars=["period", "month"], value_vars=cols, var_name="Tool", value_name="rate").dropna()
+    order = list(df["month"])
+    enc = dict(
+        x=alt.X("month:O", sort=order, title=None, axis=alt.Axis(labelAngle=0, ticks=False, domainColor=LINE, labelPadding=8)),
+        y=alt.Y("rate:Q", title=None, scale=alt.Scale(domain=[0, 1]),
+                axis=alt.Axis(format="%", tickCount=4, domain=False, ticks=False, gridColor="#F4F4F5", labelPadding=8)),
+        tooltip=[alt.Tooltip("month:O", title="Month"), alt.Tooltip("Tool:N"),
+                 alt.Tooltip("rate:Q", format=".0%", title="Mention rate")],
+    )
+    if view == "Overall":
+        base = alt.Chart(long).encode(**enc)
+        chart = (base.mark_area(color=INK, opacity=0.05, interpolate="linear")
+                 + base.mark_line(color=INK, strokeWidth=1.75) + base.mark_point(color=INK, filled=True, size=28))
     else:
-        st.line_chart(df.drop(columns="All tools"), y_label="% of answers naming you")
+        scale = alt.Scale(domain=cols, range=[SERIES[c] for c in cols])
+        base = alt.Chart(long).encode(**enc, color=alt.Color("Tool:N", scale=scale,
+                                      legend=alt.Legend(orient="top-left", title=None, symbolType="stroke")))
+        chart = base.mark_line(strokeWidth=1.75) + base.mark_point(filled=True, size=24)
+    st.altair_chart(chart.properties(height=260).configure_view(stroke=None)
+                    .configure_axis(labelColor=MUTED, labelFont="Inter", labelFontSize=11)
+                    .configure_legend(labelColor=MUTED, labelFont="Inter", labelFontSize=11), width="stretch")
 with right:
-    st.subheader("Suggested fixes")
-    if not suggestions:
-        st.success("Nothing urgent this month.")
-    for s in suggestions:
-        with st.container(border=True):
-            st.markdown(f"**{s.title}**")
-            st.caption(s.detail)
+    heading("Suggested fixes", f"{len(suggestions)} open" if suggestions else "")
+    if suggestions:
+        with st.container(height=300, border=False):
+            fixes([(s.title, s.detail, s.priority) for s in suggestions])
+    else:
+        st.caption("Nothing needs attention this month.")
+
+gap()
 
 # ---- Breakdown -----------------------------------------------------------------
-a, b, c = st.columns(3)
+a, b, c = st.columns(3, gap="large")
 with a:
-    st.subheader("By AI tool")
-    st.dataframe(pd.DataFrame([{"AI tool": TOOL_NAMES.get(k, k), "Mention rate": pct(v)}
-                               for k, v in summary.by_provider.items()]), hide_index=True, width="stretch")
+    heading("By AI tool")
+    rows([(TOOL_NAMES.get(k, k), v, pct(v)) for k, v in sorted(summary.by_provider.items(), key=lambda kv: -kv[1])])
 with b:
-    st.subheader("By language")
-    st.dataframe(pd.DataFrame([{"Language": LANG_NAMES.get(k, k), "Mention rate": pct(v)}
-                               for k, v in summary.by_language.items()]), hide_index=True, width="stretch")
+    heading("By language")
+    rows([(LANG_NAMES.get(k, k), v, pct(v)) for k, v in sorted(summary.by_language.items(), key=lambda kv: -kv[1])])
 with c:
-    st.subheader("Who AI recommends instead")
-    st.dataframe(pd.DataFrame([{"Business": n, "Answers": cnt, "Share": pct(share)}
-                               for n, cnt, share in summary.top_competitors[:10]]),
-                 hide_index=True, width="stretch")
+    heading("Recommended instead", "share of answers")
+    rows([(n, share, pct(share)) for n, _, share in summary.top_competitors[:5]])
 
 # ---- Traffic -------------------------------------------------------------------
 history = traffic(store, client.id)
 if history:
-    st.subheader("Website traffic (GA4 + Search Console)")
+    gap()
+    heading("Website traffic", "GA4 and Search Console")
     labels = {"ga4.ai_assistant_users": "AI Assistant users", "ga4.organic_users": "Organic users",
               "gsc.clicks": "Search clicks", "gsc.impressions": "Search impressions"}
-    table = pd.DataFrame(history).T.sort_index().rename(columns=labels)
+    table = pd.DataFrame(history).T.sort_index(ascending=False).rename(columns=labels)
+    table.index = [month_label(p) for p in table.index]
     st.dataframe(table.style.format("{:,.0f}"), width="stretch")
 
-# ---- Answers explorer ----------------------------------------------------------
-st.subheader("Every answer, dated")
-f1, f2, f3 = st.columns(3)
-tool = f1.selectbox("AI tool", ["All", *summary.by_provider], format_func=lambda k: TOOL_NAMES.get(k, k))
-status = f2.selectbox("Named you?", ["All", "Yes", "No"])
-query = f3.text_input("Search questions")
-rows = [r for r in results
-        if (tool == "All" or r["provider"] == tool)
-        and (status == "All" or bool(r["mentioned"]) == (status == "Yes"))
-        and query.lower() in r["prompt"].lower()]
-st.caption(f"{len(rows)} answers")
-for r in sorted(rows, key=lambda r: (r["prompt"], r["provider"])):
-    mark = "✅" if r["mentioned"] else "❌"
-    with st.expander(f"{mark}  {TOOL_NAMES.get(r['provider'], r['provider'])} — {r['prompt']}"):
+# ---- Answers -------------------------------------------------------------------
+gap()
+heading("Answers", f"{len(results)} this month")
+f1, f2, f3 = st.columns([1, 1, 2])
+tool = f1.selectbox("AI tool", ["All", *summary.by_provider], format_func=lambda k: "All tools" if k == "All" else TOOL_NAMES.get(k, k))
+status = f2.selectbox("Result", ["All", "Mentioned", "Not mentioned"])
+query = f3.text_input("Search", placeholder="Filter by question")
+shown = [r for r in results
+         if (tool == "All" or r["provider"] == tool)
+         and (status == "All" or bool(r["mentioned"]) == (status == "Mentioned"))
+         and query.lower() in r["prompt"].lower()]
+if len(shown) != len(results):
+    st.caption(f"Showing {len(shown)} of {len(results)}")
+for r in sorted(shown, key=lambda r: (r["prompt"], r["provider"])):
+    icon = ":material/check:" if r["mentioned"] else ":material/close:"
+    with st.expander(f"{r['prompt']}  ·  {TOOL_NAMES.get(r['provider'], r['provider'])}", icon=icon):
+        facts = []
         if r["mentioned"]:
-            st.markdown(f"Matched **{r['matched_alias']}** (score {r['match_score']:.2f})")
+            facts.append(f"Matched “{r['matched_alias']}” ({r['match_score']:.2f})")
         comps = ", ".join(c["name"] for c in r["competitors"])
         if comps:
-            st.markdown(f"Also named: {comps}")
-        st.caption(f"{r['model']} · {r['created_at']}")
+            facts.append(f"Also named: {comps}")
+        facts.append(f"{r['model']} · {r['created_at'][:16]}")
+        st.caption("  \n".join(facts))
         st.markdown(r["answer"])
 
-# ---- Report download -----------------------------------------------------------
+# ---- Report --------------------------------------------------------------------
 with st.sidebar:
-    st.divider()
-    st.download_button("Download monthly PDF", build_report(client, summary, suggestions, store),
-                       file_name=f"{client.id}-{period}.pdf", mime="application/pdf")
+    st.download_button("Download PDF report", build_report(client, summary, suggestions, store),
+                       file_name=f"{client.id}-{period}.pdf", mime="application/pdf",
+                       icon=":material/download:", width="stretch")
