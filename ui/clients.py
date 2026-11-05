@@ -8,6 +8,7 @@ import streamlit as st
 from lens.config import CATEGORIES, Client, Competitor, Listing, Service, save_client, slugify
 from lens.prompts import build_prompts
 from ui.common import LANG_NAMES, load_clients
+from ui.theme import hero
 
 NEW = "__new__"
 SCHEMA_CHOICES = {"Not checked": None, "Yes": True, "No": False}
@@ -26,15 +27,15 @@ def table_rows(df: pd.DataFrame) -> list[dict]:
     return rows
 
 
-st.title("Clients")
+hero("Workspace", "Clients", "Businesses Lens tracks. Each one gets its own questions, competitors and reports.")
 clients = load_clients()
 options = [NEW, *clients]
 default = st.session_state.get("client_id") if st.session_state.get("client_id") in clients else NEW
 choice = st.selectbox("Edit", options, index=options.index(default),
-                      format_func=lambda i: "➕ New client" if i == NEW else clients[i].name)
+                      format_func=lambda i: "＋ New client" if i == NEW else clients[i].name)
 c: Client | None = clients.get(choice)
 
-with st.form(f"client-{choice}"):
+with st.form(f"client-{choice}", border=True):
     st.subheader("The business")
     a, b = st.columns(2)
     name = a.text_input("Business name *", c.name if c else "", placeholder="SSHRI Hospital")
@@ -102,7 +103,7 @@ with st.form(f"client-{choice}"):
     extra = st.text_area("Extra questions, one per line", "\n".join(c.extra_prompts) if c else "",
                          placeholder="Typed the way a customer would ask")
 
-    submitted = st.form_submit_button("Save client", type="primary")
+    submitted = st.form_submit_button("Save client", type="primary", icon=":material/save:")
 
 if submitted:
     missing = [label for label, value in [("Business name", name), ("City", city)] if not value.strip()]
@@ -140,4 +141,4 @@ if c:
     with st.expander(f"Questions Lens will ask ({len(prompts)})", expanded=submitted):
         st.dataframe(pd.DataFrame([{"Language": LANG_NAMES.get(p.language, p.language), "Question": p.text}
                                    for p in prompts]), hide_index=True, width="stretch")
-    st.page_link("ui/dashboard.py", label="Go to dashboard", icon="📊")
+    st.page_link("ui/dashboard.py", label="Go to dashboard", icon=":material/insights:")
