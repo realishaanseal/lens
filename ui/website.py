@@ -27,7 +27,8 @@ run = action.button("Check website", type="primary", icon=":material/travel_expl
 rule()
 
 if run:
-    with st.spinner(f"Reading {client.website}"):
+    site = client.website.split("//")[-1].rstrip("/")
+    with st.spinner(f"Walking through {site} the way AI crawlers do…"):
         audit = run_audit(client)
     store.save_audit(client.id, audit.score, audit.to_json())
     st.rerun()

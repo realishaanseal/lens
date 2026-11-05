@@ -14,6 +14,7 @@ from lens.runner import run_check, seed_demo
 from lens.store import current_period
 from lens.audit import Audit
 from lens.suggest import Suggestion, suggest
+from ui.status_copy import StatusCopy
 from ui.common import LANG_NAMES, TOOL_NAMES, client_picker, get_store, pct
 from ui.theme import (INK, LINE, MUTED, SERIES, change_text, cta, fixes, gap, heading, identity, month_label, rows,
                       rule, stats)
@@ -49,9 +50,10 @@ def run_dialog(client) -> None:
         except (ValueError, ProviderError) as exc:
             st.error(str(exc))
             return
-        bar = st.progress(0.0, "Starting")
+        copy = StatusCopy(client)
+        bar = st.progress(0.0, copy.opener())
         run_check(client, providers, store, period=run_period, limit=int(limit),
-                  progress=lambda done, total, label: bar.progress(done / total, label[:56]))
+                  progress=lambda done, total, label: bar.progress(done / total, copy.line(done, total, label)))
         st.session_state["period"] = run_period
         st.rerun()
 
@@ -137,7 +139,7 @@ if not period:
         run_dialog(client)
     if c2.button("Explore sample data", width="stretch",
                  help="Five months of generated answers so you can see a full dashboard."):
-        with st.spinner("Generating sample months"):
+        with st.spinner("Building five months of sample answers…"):
             seed_demo(client, store)
         st.rerun()
     gap()
