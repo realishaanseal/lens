@@ -205,8 +205,10 @@ with left:
 with right:
     heading("Suggested fixes", f"{len(suggestions)} open" if suggestions else "")
     if suggestions:
-        with st.container(height=300, border=False):
-            fixes([(s.title, s.detail, s.priority) for s in suggestions])
+        fixes([(s.title, s.detail, s.priority) for s in suggestions[:4]])
+        if len(suggestions) > 4:
+            with st.expander(f"{len(suggestions) - 4} more"):
+                fixes([(s.title, s.detail, s.priority) for s in suggestions[4:]])
     else:
         st.caption("Nothing needs attention this month.")
 
